@@ -15,8 +15,12 @@ source env/bin/activate
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 # Windows
-python -m venv env
+python -m venv env O py -m venv env
 env\Scripts\activate
+
+
+pip install django
+pip freeze > requirements.txt
 
 Instalar dependencias
 pip install -r requirements.txt
