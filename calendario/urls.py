@@ -1,6 +1,8 @@
 from django.urls import path
-from .views import agenda_aula
+from . import views
+
+app_name = 'calendario'
 
 urlpatterns = [
-    path('agenda-aula/', agenda_aula, name='agenda_aula'),
+    path('agenda-por-aula/', views.agenda_por_aula, name='agenda_por_aula'),
 ]
