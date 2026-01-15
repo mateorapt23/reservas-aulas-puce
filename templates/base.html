@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Sistema LTIC{% endblock %}</title>
+
+    <!-- Google Font: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Tailwind + DaisyUI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif'],
+                    },
+                }
+            },
+            daisyui: {
+                themes: [],
+            }
+        }
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet"/>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body class="bg-[#0f172a] font-sans">
+
+<div class="drawer lg:drawer-open">
+    <input id="sidebar-toggle" type="checkbox" class="drawer-toggle"/>
+
+    <!-- CONTENIDO -->
+    <div class="drawer-content flex flex-col">
+
+        <!-- Navbar móvil -->
+        <div class="lg:hidden navbar bg-[#020617] text-gray-200">
+            <label for="sidebar-toggle" class="btn btn-ghost text-xl">☰</label>
+            <span class="ml-2 font-medium tracking-wide">LTIC · Gestión de Aulas</span>
+        </div>
+
+        <!-- MAIN -->
+        <main class="p-8 text-gray-200 overflow-auto">
+            {% block content %}
+            {% endblock %}
+        </main>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="drawer-side">
+        <label for="sidebar-toggle" class="drawer-overlay"></label>
+
+        <aside class="
+            w-72 min-h-full
+            bg-gradient-to-b from-[#0B1120] to-[#020617]
+            text-gray-300
+            shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]
+            flex flex-col
+        ">
+
+            <!-- LOGO -->
+            <div class="px-6 py-6 flex items-center gap-3">
+                <div class="
+                    w-11 h-11 rounded-xl
+                    bg-gradient-to-br from-indigo-500 to-indigo-600
+                    flex items-center justify-center
+                    text-white font-semibold text-lg
+                    shadow-[0_0_15px_rgba(99,102,241,0.5)]
+                ">
+                    CL
+                </div>
+                <div>
+                    <p class="text-lg font-semibold text-gray-100 leading-tight">
+                        LTIC
+                    </p>
+                    <p class="text-xs text-gray-400 tracking-wide">
+                        Gestión de Aulas
+                    </p>
+                </div>
+            </div>
+
+            <!-- MENU -->
+            <ul class="menu px-4 text-[15px] font-medium gap-1">
+
+                <!-- RESERVAS -->
+                <li class="menu-title text-xs tracking-widest uppercase text-gray-500">
+                    <span>Reservas</span>
+                </li>
+
+                <li>
+                    <a href="/reservas/nueva/"
+                       class="hover:bg-white/5 hover:text-white rounded-xl transition-all">
+                        ➕ Nueva reserva
+                    </a>
+                </li>
+
+                <!-- CALENDARIO -->
+                <li class="menu-title text-xs tracking-widest uppercase text-gray-500 mt-4">
+                    <span>Calendario</span>
+                </li>
+
+                <li>
+                    <a href="{% url 'reservas:agenda_por_aula' %}"
+                       class="hover:bg-white/5 hover:text-white rounded-xl transition-all">
+                        📅 Agenda por aula
+                    </a>
+                </li>
+
+                <!-- CONFIGURACIÓN -->
+                <li class="menu-title text-xs tracking-widest uppercase text-gray-500 mt-4">
+                    <span>Configuración</span>
+                </li>
+
+                <li>
+                    <a href="/configuracion/requerimientos/"
+                       class="hover:bg-white/5 hover:text-white rounded-xl transition-all">
+                        🧩 Requerimientos
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#"
+                       class="hover:bg-white/5 hover:text-white rounded-xl transition-all">
+                        📚 Cátedras
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#"
+                       class="hover:bg-white/5 hover:text-white rounded-xl transition-all">
+                        🏫 Aulas
+                    </a>
+                </li>
+
+            </ul>
+
+            <!-- FOOTER -->
+            <div class="mt-auto p-4 text-center text-xs text-gray-500">
+                Sistema LTIC · Admin
+            </div>
+
+        </aside>
+    </div>
+</div>
+
+</body>
+</html>
