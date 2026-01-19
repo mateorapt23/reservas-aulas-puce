@@ -27,156 +27,158 @@
             </div>
 
             <!-- FORM -->
-            <div class="bg-[#020617] rounded-2xl shadow-lg p-8">
+            <div class="bg-[#020617] rounded-2xl shadow-lg px-4 sm:px-6 lg:px-10 py-8 max-w-7xl mx-auto">  <!-- Más ancho + padding lateral adaptativo -->
 
-                <form method="POST" class="space-y-6">
+                <form method="POST" class="space-y-4">
                     {% csrf_token %}
 
-                    <!-- DOCENTE -->
-                    <div>
-                        <label class="label">
-                            <span class="label-text text-gray-300">Nombre del docente</span>
-                        </label>
-                        <input type="text"
-                               name="docente"
-                               required
-                               value="{{ request.POST.docente }}"
-                               placeholder="Ej. Diana Molina"
-                               class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white"/>
-                    </div>
-
-                    <!-- CÁTEDRA -->
-                    <div>
-                        <label class="label">
-                            <span class="label-text text-gray-300">Cátedra</span>
-                        </label>
-                        <select name="catedra"
+                    <!-- Primera fila: Docente + Cátedra (más ancha) -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- DOCENTE -->
+                        <div>
+                            <label class="label pb-1">
+                                <span class="label-text text-gray-300">Nombre del docente</span>
+                            </label>
+                            <input type="text"
+                                name="docente"
                                 required
-                                class="select select-bordered w-full bg-[#0f172a] border-white/10 text-white">
-                            <option disabled selected>Seleccione una cátedra</option>
-                            {% for c in catedras %}
-                                <option value="{{ c.id }}"
-                                    {% if request.POST.catedra == c.id|stringformat:"s" %}selected{% endif %}>
-                                    {{ c.nombre }}
-                                </option>
-                            {% endfor %}
-                        </select>
+                                value="{{ request.POST.docente }}"
+                                placeholder="Ej. Diana Molina"
+                                class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white text-base"/>  <!-- quitado input-sm -->
+                        </div>
+
+                        <!-- CÁTEDRA -->
+                        <div>
+                            <label class="label pb-1">
+                                <span class="label-text text-gray-300">Cátedra</span>
+                            </label>
+                            <select name="catedra"
+                                    required
+                                    class="select select-bordered w-full bg-[#0f172a] border-white/10 text-white text-base">
+                                <option disabled selected>Seleccione una cátedra</option>
+                                {% for c in catedras %}
+                                    <option value="{{ c.id }}"
+                                        {% if request.POST.catedra == c.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ c.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
 
                     <!-- REQUERIMIENTOS -->
                     <div>
-                        <label class="label">
+                        <label class="label pb-1">
                             <span class="label-text text-gray-300">Requerimientos</span>
                         </label>
-
                         <select name="requerimientos"
                                 multiple
                                 required
-                                class="select select-bordered w-full bg-[#0f172a] border-white/10 text-white h-40">
-
+                                class="select select-bordered w-full bg-[#0f172a] border-white/10 text-white h-36">  <!-- altura moderada pero cómoda -->
                             {% for r in requerimientos %}
                                 <option value="{{ r.id }}"
-                                    {% if r.id|stringformat:"s" in req_seleccionados %}
-                                        selected
-                                    {% endif %}>
+                                    {% if r.id|stringformat:"s" in req_seleccionados %}selected{% endif %}>
                                     {{ r.nombre }}
                                 </option>
                             {% endfor %}
-
                         </select>
-
                         <p class="text-xs text-gray-500 mt-1">
                             Mantén presionado Ctrl para seleccionar varios
                         </p>
                     </div>
 
-                    <!-- FECHA -->
-                    <div>
-                        <label class="label">
-                            <span class="label-text text-gray-300">Fecha</span>
-                        </label>
-                        <input type="date"
-                               name="fecha"
-                               id="fecha"
-                               required
-                               value="{{ request.POST.fecha }}"
-                               class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white"/>
-                    </div>
-
-                    <!-- HORARIO -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- FECHA + HORAS (3 columnas en pantallas grandes) -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- FECHA -->
                         <div>
-                            <label class="label">
+                            <label class="label pb-1">
+                                <span class="label-text text-gray-300">Fecha</span>
+                            </label>
+                            <input type="date"
+                                name="fecha"
+                                id="fecha"
+                                required
+                                value="{{ request.POST.fecha }}"
+                                class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white text-base"/>
+                        </div>
+
+                        <!-- HORA INICIO -->
+                        <div>
+                            <label class="label pb-1">
                                 <span class="label-text text-gray-300">Hora de inicio</span>
                             </label>
                             <input type="time"
-                                   name="hora_inicio"
-                                   required
-                                   value="{{ request.POST.hora_inicio }}"
-                                   class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white"/>
+                                name="hora_inicio"
+                                required
+                                value="{{ request.POST.hora_inicio }}"
+                                class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white text-base"/>
                         </div>
+
+                        <!-- HORA FIN -->
                         <div>
-                            <label class="label">
+                            <label class="label pb-1">
                                 <span class="label-text text-gray-300">Hora de fin</span>
                             </label>
                             <input type="time"
-                                   name="hora_fin"
-                                   required
-                                   value="{{ request.POST.hora_fin }}"
-                                   class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white"/>
+                                name="hora_fin"
+                                required
+                                value="{{ request.POST.hora_fin }}"
+                                class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white text-base"/>
                         </div>
                     </div>
 
-                    <!-- TIPO RESERVA -->
-                    <div>
-                        <label class="label">
-                            <span class="label-text text-gray-300">Tipo de reserva</span>
-                        </label>
-
-                        <div class="flex gap-6 mt-2">
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio"
-                                       name="tipo"
-                                       value="ocasional"
-                                       class="radio radio-primary"
-                                       {% if request.POST.tipo != 'semestral' %}checked{% endif %}>
-                                <span class="text-gray-300">Ocasional</span>
+                    <!-- TIPO + FIN SEMESTRE (2 columnas) -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- TIPO RESERVA -->
+                        <div>
+                            <label class="label pb-1">
+                                <span class="label-text text-gray-300">Tipo de reserva</span>
                             </label>
+                            <div class="flex gap-8 mt-1">
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio"
+                                        name="tipo"
+                                        value="ocasional"
+                                        class="radio radio-primary"
+                                        {% if request.POST.tipo != 'semestral' %}checked{% endif %}>
+                                    <span class="text-gray-300">Ocasional</span>
+                                </label>
 
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio"
-                                       name="tipo"
-                                       value="semestral"
-                                       class="radio radio-primary"
-                                       {% if request.POST.tipo == 'semestral' %}checked{% endif %}>
-                                <span class="text-gray-300">Semestral</span>
-                            </label>
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio"
+                                        name="tipo"
+                                        value="semestral"
+                                        class="radio radio-primary"
+                                        {% if request.POST.tipo == 'semestral' %}checked{% endif %}>
+                                    <span class="text-gray-300">Semestral</span>
+                                </label>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- FIN DE SEMESTRE -->
-                    <div id="fin-semestre-wrapper"
-                         class="{% if request.POST.tipo != 'semestral' %}opacity-60{% endif %}">
-                        <label class="label">
-                            <span class="label-text text-gray-300">
-                                Fecha fin de semestre
-                            </span>
-                        </label>
-                        <input type="date"
-                               name="fin_semestre"
-                               id="fin_semestre"
-                               value="{{ request.POST.fin_semestre }}"
-                               {% if request.POST.tipo != 'semestral' %}disabled{% endif %}
-                               class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white"/>
-                        <p class="text-xs text-gray-500 mt-1">
-                            Solo aplica para reservas semestrales
-                        </p>
+                        <!-- FIN DE SEMESTRE (manteniendo exactamente lo que pediste) -->
+                        <div id="fin-semestre-wrapper"
+                            class="{% if request.POST.tipo != 'semestral' %}opacity-60{% endif %}">
+                            <label class="label pb-1">
+                                <span class="label-text text-gray-300">
+                                    Fecha fin de semestre
+                                </span>
+                            </label>
+                            <input type="date"
+                                name="fin_semestre"
+                                id="fin_semestre"
+                                value="{{ request.POST.fin_semestre }}"
+                                {% if request.POST.tipo != 'semestral' %}disabled{% endif %}
+                                class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white text-base"/>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Solo aplica para reservas semestrales
+                            </p>
+                        </div>
                     </div>
 
                     <!-- BOTÓN -->
                     <div class="pt-4">
                         <button type="submit"
-                                class="btn btn-primary w-full text-base">
+                                class="btn btn-primary w-full text-base py-3">
                             🔍 Ver aulas disponibles
                         </button>
                     </div>
@@ -238,7 +240,6 @@
 
                         <!-- ACTIONS -->
                         <div class="flex gap-3 self-start lg:self-center">
-                            <!-- Cambio clave: Cambiar de <label for="agenda-drawer"> a <button type="button"> para que JS maneje el toggle después de cargar la agenda -->
                             <button type="button"
                                     class="btn btn-outline btn-sm btn-ver-agenda"
                                     data-aula="{{ aula.id }}"
@@ -270,9 +271,6 @@
                         </div>
                     </div>
 
-                    <!-- Opcional: Eliminar esto si no se usa en JS (parece placeholder obsoleto, ya que la agenda se carga en el drawer) -->
-                    <!-- <div id="agenda-aula-{{ aula.id }}" class="mt-4 hidden"></div> -->
-
                     {% endfor %}
 
                 </div>
@@ -301,7 +299,7 @@
             </div>
 
             <div id="agenda-lista"
-                 class="space-y-3 overflow-y-auto max-h-[calc(100vh-120px)] pr-2">
+                 class="space-y-3 overflow-y-auto max-h-[calc(100vh-120px)] pr-3">
             </div>
         </aside>
     </div>
