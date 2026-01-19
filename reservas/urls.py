@@ -10,5 +10,6 @@ app_name = 'reservas'
 urlpatterns = [
     path('nueva/', views.nueva_reserva, name='nueva_reserva'),
     path('guardar/', views.guardar_reserva, name='guardar_reserva'),
+    path('api/agenda-aula/', views.api_agenda_aula, name='api_agenda_aula'),
    
 ]
