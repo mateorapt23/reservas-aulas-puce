@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends {% extends "base.html" %}
 {% load static %}
 {% block title %}Nueva Reserva{% endblock %}
 
@@ -73,7 +73,6 @@
                                 multiple
                                 required
                                 class="select select-bordered w-full bg-[#0f172a] border-white/10 text-white h-40">
-
                             {% for r in requerimientos %}
                                 <option value="{{ r.id }}"
                                     {% if r.id|stringformat:"s" in req_seleccionados %}
@@ -82,7 +81,6 @@
                                     {{ r.nombre }}
                                 </option>
                             {% endfor %}
-
                         </select>
 
                         <p class="text-xs text-gray-500 mt-1">
@@ -97,7 +95,6 @@
                         </label>
                         <input type="date"
                                name="fecha"
-                               id="fecha"
                                required
                                value="{{ request.POST.fecha }}"
                                class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white"/>
@@ -127,7 +124,7 @@
                         </div>
                     </div>
 
-                    <!-- TIPO RESERVA -->
+                    <!-- TIPO -->
                     <div>
                         <label class="label">
                             <span class="label-text text-gray-300">Tipo de reserva</span>
@@ -135,18 +132,14 @@
 
                         <div class="flex gap-6 mt-2">
                             <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio"
-                                       name="tipo"
-                                       value="ocasional"
+                                <input type="radio" name="tipo" value="ocasional"
                                        class="radio radio-primary"
                                        {% if request.POST.tipo != 'semestral' %}checked{% endif %}>
                                 <span class="text-gray-300">Ocasional</span>
                             </label>
 
                             <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio"
-                                       name="tipo"
-                                       value="semestral"
+                                <input type="radio" name="tipo" value="semestral"
                                        class="radio radio-primary"
                                        {% if request.POST.tipo == 'semestral' %}checked{% endif %}>
                                 <span class="text-gray-300">Semestral</span>
@@ -154,7 +147,7 @@
                         </div>
                     </div>
 
-                    <!-- FIN DE SEMESTRE -->
+                    <!-- FIN SEMESTRE -->
                     <div id="fin-semestre-wrapper"
                          class="{% if request.POST.tipo != 'semestral' %}opacity-60{% endif %}">
                         <label class="label">
@@ -168,114 +161,38 @@
                                value="{{ request.POST.fin_semestre }}"
                                {% if request.POST.tipo != 'semestral' %}disabled{% endif %}
                                class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white"/>
-                        <p class="text-xs text-gray-500 mt-1">
-                            Solo aplica para reservas semestrales
-                        </p>
                     </div>
 
-                    <!-- BOTÓN -->
-                    <div class="pt-4">
-                        <button type="submit"
-                                class="btn btn-primary w-full text-base">
-                            🔍 Ver aulas disponibles
-                        </button>
-                    </div>
+                    <button type="submit" class="btn btn-primary w-full">
+                        🔍 Ver aulas disponibles
+                    </button>
 
                 </form>
             </div>
 
             <!-- RESULTADOS -->
             {% if aulas %}
-            <div class="mt-12">
+            <div class="mt-12 space-y-4">
+                {% for aula in aulas %}
+                <div class="bg-[#020617] border border-white/10 rounded-2xl p-6
+                            flex flex-col lg:flex-row lg:justify-between gap-6">
 
-                <h2 class="text-lg font-semibold text-white mb-6">
-                    Aulas sugeridas según requerimientos
-                </h2>
-
-                <div class="space-y-4">
-
-                    {% for aula in aulas %}
-                    <div class="
-                        bg-[#020617]
-                        border {% if aula.choque %}border-red-500/30{% else %}border-white/10{% endif %}
-                        rounded-2xl
-                        p-6
-                        flex flex-col lg:flex-row lg:items-center lg:justify-between
-                        gap-6
-                        {% if aula.choque %}opacity-80{% endif %}
-                    ">
-
-                        <!-- INFO -->
-                        <div class="space-y-2">
-                            <h3 class="text-lg font-semibold text-white">
-                                Aula {{ aula.numero }}
-                            </h3>
-
-                            <p class="text-sm text-gray-400">
-                                Capacidad:
-                                <span class="text-gray-200">{{ aula.capacidad }} estudiantes</span>
-                            </p>
-
-                            <p class="text-sm text-gray-400">
-                                Software instalado:
-                                <span class="text-gray-200">
-                                    {% for r in aula.requerimientos.all %}
-                                        {{ r.nombre }}{% if not forloop.last %}, {% endif %}
-                                    {% endfor %}
-                                </span>
-                            </p>
-
-                            {% if aula.choque %}
-                                <span class="inline-flex items-center gap-2 text-sm text-red-400 mt-2">
-                                    ❌ Choque de horario ({{ request.POST.hora_inicio }} – {{ request.POST.hora_fin }})
-                                </span>
-                            {% else %}
-                                <span class="inline-flex items-center gap-2 text-sm text-green-400 mt-2">
-                                    ✅ Disponible en el horario seleccionado
-                                </span>
-                            {% endif %}
-                        </div>
-
-                        <!-- ACTIONS -->
-                        <div class="flex gap-3 self-start lg:self-center">
-                            <!-- Cambio clave: Cambiar de <label for="agenda-drawer"> a <button type="button"> para que JS maneje el toggle después de cargar la agenda -->
-                            <button type="button"
-                                    class="btn btn-outline btn-sm btn-ver-agenda"
-                                    data-aula="{{ aula.id }}"
-                                    data-numero="{{ aula.numero }}">
-                                📅 Ver agenda
-                            </button>
-                            <form method="POST" action="{% url 'reservas:guardar_reserva' %}">
-                                {% csrf_token %}
-
-                                <input type="hidden" name="docente" value="{{ request.POST.docente }}">
-                                <input type="hidden" name="catedra" value="{{ request.POST.catedra }}">
-                                <input type="hidden" name="fecha" value="{{ request.POST.fecha }}">
-                                <input type="hidden" name="hora_inicio" value="{{ request.POST.hora_inicio }}">
-                                <input type="hidden" name="hora_fin" value="{{ request.POST.hora_fin }}">
-                                <input type="hidden" name="tipo" value="{{ request.POST.tipo }}">
-                                <input type="hidden" name="fin_semestre" value="{{ request.POST.fin_semestre }}">
-
-                                {% for req in req_seleccionados %}
-                                    <input type="hidden" name="requerimientos" value="{{ req }}">
-                                {% endfor %}
-
-                                <input type="hidden" name="aula_id" value="{{ aula.id }}">
-
-                                <button class="btn btn-primary btn-sm"
-                                        {% if aula.choque %}disabled{% endif %}>
-                                    Reservar esta aula
-                                </button>
-                            </form>
-                        </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-white">
+                            Aula {{ aula.numero }}
+                        </h3>
+                        <p class="text-sm text-gray-400">
+                            Capacidad: {{ aula.capacidad }}
+                        </p>
                     </div>
 
-                    <!-- Opcional: Eliminar esto si no se usa en JS (parece placeholder obsoleto, ya que la agenda se carga en el drawer) -->
-                    <!-- <div id="agenda-aula-{{ aula.id }}" class="mt-4 hidden"></div> -->
-
-                    {% endfor %}
-
+                    <button type="button"
+                            class="btn btn-outline btn-sm btn-ver-agenda"
+                            data-aula="{{ aula.id }}">
+                        📅 Ver agenda
+                    </button>
                 </div>
+                {% endfor %}
             </div>
             {% endif %}
 

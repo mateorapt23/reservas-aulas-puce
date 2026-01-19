@@ -16,8 +16,12 @@
             <label class="label text-gray-300">Aula</label>
             <select id="select-aula" class="select select-bordered w-48 bg-[#0f172a] text-white border-white/10">
                 <option value="">Selecciona un aula</option>
-                <option value="1">Aula 101</option>
-                <option value="2">Aula 102</option>
+
+                {% for aula in aulas %}
+                    <option value="{{ aula.id }}">
+                        Aula {{ aula.numero }}
+                    </option>
+                {% endfor %}
             </select>
         </div>
 
@@ -70,5 +74,20 @@
 
 .reserva.semestral { background-color: #3b82f6; } /* azul */
 .reserva.ocasional { background-color: #16a34a; } /* verde */
+
+.reserva.compacta {
+    font-size: 11px;
+    line-height: 1.2;
+}
+
+.reserva-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 8px;
+}
+
+.reserva-req {
+    grid-column: 1 / -1;
+}
 </style>
 {% endblock %}
