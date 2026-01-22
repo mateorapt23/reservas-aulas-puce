@@ -29,7 +29,7 @@
             <!-- FORM -->
             <div class="bg-[#020617] rounded-2xl shadow-lg px-4 sm:px-6 lg:px-10 py-8 max-w-7xl mx-auto">  <!-- Más ancho + padding lateral adaptativo -->
 
-                <form method="POST" class="space-y-4">
+                <form method="POST" class="space-y-4" action="#resultados">
                     {% csrf_token %}
 
                     <!-- Primera fila: Docente + Cátedra (más ancha) -->
@@ -190,7 +190,8 @@
             {% if aulas %}
             <div class="mt-12">
 
-                <h2 class="text-lg font-semibold text-white mb-6">
+                <h2 id="resultados"
+                    class="text-lg font-semibold text-white mb-6">
                     Aulas sugeridas según requerimientos
                 </h2>
 
@@ -275,6 +276,17 @@
 
                 </div>
             </div>
+            {% else %}
+            <!-- PLACEHOLDER ANTES DE BUSCAR -->
+            <div class="mt-10">
+                <h2 class="text-lg font-semibold text-white mb-4">
+                    Aulas sugeridas
+                </h2>
+
+                <div class="bg-[#020617] rounded-2xl p-6 text-gray-400 text-sm text-center">
+                    Las aulas disponibles se mostrarán aquí luego de enviar el formulario.
+                </div>
+            </div>
             {% endif %}
 
         </div>
@@ -307,5 +319,10 @@
 </div>
 
 <script src="{% static 'reservas/nueva_reserva.js' %}"></script>
+<style>
+    html {
+    scroll-behavior: smooth;
+}
+</style>
 
 {% endblock %}

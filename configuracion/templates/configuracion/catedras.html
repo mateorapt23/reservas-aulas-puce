@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block title %}Cátedras{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+
+    <!-- TÍTULO -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-semibold text-white">Cátedras</h1>
+        <p class="text-sm text-gray-400">
+            Gestiona las cátedras del sistema
+        </p>
+    </div>
+
+    <!-- BARRA SUPERIOR -->
+    <div class="flex flex-col sm:flex-row gap-4 items-center justify-between mb-6">
+      
+        {% csrf_token %}
+        <!-- BUSCADOR -->
+        <input type="text"
+               id="buscador"
+               value="{{ q }}"
+               placeholder="🔍 Buscar cátedra..."
+               class="input input-bordered w-full sm:max-w-sm
+                      bg-[#0f172a] border-white/10 text-white"/>
+
+        <div class="flex items-center gap-3">
+
+            <!-- BOTÓN AGREGAR -->
+            <div id="agregar-wrapper" class="flex items-center gap-2">
+                <button id="btn-agregar"
+                        class="btn btn-sm btn-primary">
+                    ➕ Agregar
+                </button>
+            </div>
+
+            <!-- ORDEN -->
+            <select id="orden"
+                    class="select select-bordered
+                           bg-[#0f172a] border-white/10 text-white">
+                <option value="asc" {% if order == 'asc' %}selected{% endif %}>
+                    A – Z
+                </option>
+                <option value="desc" {% if order == 'desc' %}selected{% endif %}>
+                    Z – A
+                </option>
+            </select>
+        </div>
+    </div>
+
+    <!-- LISTA -->
+    <div id="lista"
+         class="bg-[#020617] rounded-2xl border border-white/10 divide-y divide-white/5">
+
+        {% if catedras %}
+            {% for c in catedras %}
+            <div class="flex items-center justify-between p-4 hover:bg-white/5 transition"
+                 data-id="{{ c.id }}">
+
+                <span class="nombre-catedra text-white text-sm"
+                      data-id="{{ c.id }}">
+                    {{ c.nombre }}
+                </span>
+
+                <div class="flex gap-2">
+
+                    <!-- EDITAR -->
+                    <button class="btn-editar btn btn-xs btn-outline"
+                            data-id="{{ c.id }}">
+                        ✏️
+                    </button>
+
+                    <button class="btn-eliminar btn btn-xs btn-error btn-outline"
+                            data-id="{{ c.id }}">
+                        🗑️
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="p-6 text-center text-gray-400 text-sm">
+                No se encontraron cátedras
+            </div>
+        {% endif %}
+
+    </div>
+
+</div>
+
+<script>
+const buscador = document.getElementById("buscador");
+const orden = document.getElementById("orden");
+const lista = document.getElementById("lista");
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+
+let timeout = null;
+
+/* ======================
+   CARGAR LISTA
+====================== */
+function cargarCatedras() {
+    const q = buscador.value;
+    const order = orden.value;
+
+    fetch(`?q=${encodeURIComponent(q)}&order=${order}`)
+        .then(res => res.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, "text/html");
+            const nuevaLista = doc.getElementById("lista");
+            lista.innerHTML = nuevaLista.innerHTML;
+            activarEventos();
+        });
+}
+
+/* ======================
+   BUSCADOR DINÁMICO
+====================== */
+buscador.addEventListener("input", () => {
+    clearTimeout(timeout);
+    timeout = setTimeout(cargarCatedras, 300);
+});
+
+orden.addEventListener("change", cargarCatedras);
+
+/* ======================
+   AGREGAR
+====================== */
+document.getElementById("btn-agregar").addEventListener("click", () => {
+    const wrapper = document.getElementById("agregar-wrapper");
+
+    wrapper.innerHTML = `
+        <input id="nuevo-nombre"
+               class="input input-sm bg-[#0f172a] border-white/10 text-white w-40"
+               placeholder="Nueva cátedra..." />
+        <button id="guardar-nuevo" class="btn btn-success btn-sm">✔</button>
+        <button id="cancelar-nuevo" class="btn btn-ghost btn-sm">✕</button>
+    `;
+
+    document.getElementById("guardar-nuevo").onclick = () => {
+        const nombre = document.getElementById("nuevo-nombre").value;
+
+        fetch("{% url 'configuracion:crear_catedra' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrftoken,
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `nombre=${encodeURIComponent(nombre)}`
+        }).then(() => cargarCatedras());
+    };
+
+    document.getElementById("cancelar-nuevo").onclick = () => location.reload();
+});
+
+/* ======================
+   EDITAR / ELIMINAR
+====================== */
+function activarEventos() {
+
+    document.querySelectorAll(".btn-editar").forEach(btn => {
+        btn.onclick = () => {
+            const id = btn.dataset.id;
+            const span = document.querySelector(`.nombre-catedra[data-id="${id}"]`);
+            const original = span.textContent.trim();
+
+            span.innerHTML = `
+                <input id="edit-${id}"
+                       value="${original}"
+                       class="input input-sm bg-[#0f172a] border-white/10 text-white w-40" />
+            `;
+
+            btn.textContent = "✔";
+            btn.onclick = () => {
+                const nuevo = document.getElementById(`edit-${id}`).value;
+
+                fetch(`/configuracion/catedras/${id}/editar/`, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": csrftoken,
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    body: `nombre=${encodeURIComponent(nuevo)}`
+                }).then(() => cargarCatedras());
+            };
+        };
+    });
+
+    document.querySelectorAll(".btn-eliminar").forEach(btn => {
+        btn.onclick = () => {
+            const id = btn.dataset.id;
+
+            if (!confirm("¿Eliminar esta cátedra?")) return;
+
+            fetch(`/configuracion/catedras/${id}/eliminar/`, {
+                method: "POST",
+                headers: { "X-CSRFToken": csrftoken }
+            }).then(() => cargarCatedras());
+        };
+    });
+}
+
+activarEventos();
+</script>
+{% endblock %}

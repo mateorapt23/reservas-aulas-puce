@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+{% block title %}Aulas{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+
+    <!-- TÍTULO -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-semibold text-white">Aulas</h1>
+        <p class="text-sm text-gray-400">
+            Gestiona aulas, capacidad y requerimientos
+        </p>
+    </div>
+
+    <!-- BARRA SUPERIOR -->
+    <div class="flex flex-col sm:flex-row gap-4 items-center justify-between mb-6">
+
+        {% csrf_token %}
+
+        <!-- BUSCADOR -->
+        <input type="text"
+               id="buscador"
+               value="{{ q }}"
+               placeholder="🔍 Buscar aula..."
+               class="input input-bordered w-full sm:max-w-sm
+                      bg-[#0f172a] border-white/10 text-white"/>
+
+        <div class="flex items-center gap-3">
+
+            <!-- AGREGAR -->
+            <div id="agregar-wrapper" class="flex items-center gap-2">
+                <button id="btn-agregar"
+                        class="btn btn-sm btn-primary">
+                    ➕ Agregar
+                </button>
+            </div>
+
+            <!-- ORDEN -->
+            <select id="orden"
+                    class="select select-bordered
+                           bg-[#0f172a] border-white/10 text-white">
+                <option value="asc" {% if order == 'asc' %}selected{% endif %}>
+                    201 → 230
+                </option>
+                <option value="desc" {% if order == 'desc' %}selected{% endif %}>
+                    230 → 201
+                </option>
+            </select>
+        </div>
+    </div>
+
+    <!-- LISTA DE AULAS -->
+    <div id="lista-aulas"
+         class="bg-[#020617] rounded-2xl border border-white/10 divide-y divide-white/5">
+
+        {% for aula in aulas %}
+        <div class="flex flex-col gap-2 p-4 hover:bg-white/5 transition">
+
+            <!-- FILA PRINCIPAL -->
+            <div class="flex items-center justify-between"
+                 data-id="{{ aula.id }}"
+                 data-numero="{{ aula.numero }}"
+                 data-capacidad="{{ aula.capacidad }}">
+
+                <!-- CONTENIDO EDITABLE -->
+                <div class="contenido-aula text-white text-sm flex items-center gap-2 flex-wrap">
+
+                    <span class="font-semibold">
+                        Aula {{ aula.numero }}
+                    </span>
+
+                    <span class="text-gray-400">
+                        · Capacidad: {{ aula.capacidad }}
+                    </span>
+
+                </div>
+
+                <!-- BOTONES -->
+                <div class="flex gap-2">
+                    <button class="btn-editar btn btn-xs btn-outline"
+                            data-id="{{ aula.id }}">
+                        ✏️
+                    </button>
+
+                    <button class="btn-eliminar btn btn-xs btn-error btn-outline"
+                            data-id="{{ aula.id }}">
+                        🗑️
+                    </button>
+                </div>
+            </div>
+
+            <!-- REQUERIMIENTOS -->
+            <div class="flex flex-wrap gap-2 text-xs text-gray-300">
+                {% for r in aula.requerimientos.all %}
+                    <span class="px-2 py-1 rounded bg-white/10">
+                        {{ r.nombre }}
+                    </span>
+                {% empty %}
+                    <span class="text-gray-500 italic">
+                        Sin requerimientos
+                    </span>
+                {% endfor %}
+            </div>
+
+        </div>
+        {% empty %}
+        <div class="p-6 text-center text-gray-400 text-sm">
+            No hay aulas registradas
+        </div>
+        {% endfor %}
+
+    </div>
+</div>
+
+<!-- =========================
+     REQUERIMIENTOS GLOBALES
+========================= -->
+<script>
+const requerimientosGlobales = [
+    {% for r in requerimientos %}
+        { id: {{ r.id }}, nombre: "{{ r.nombre }}" },
+    {% endfor %}
+];
+</script>
+
+<!-- =========================
+     SCRIPT PRINCIPAL
+========================= -->
+<script>
+const buscador = document.getElementById("buscador");
+const orden = document.getElementById("orden");
+const lista = document.getElementById("lista-aulas");
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+let timeout = null;
+
+/* =========================
+   CARGAR LISTA
+========================= */
+function cargarAulas() {
+    fetch(`?q=${encodeURIComponent(buscador.value)}&order=${orden.value}`)
+        .then(r => r.text())
+        .then(html => {
+            const doc = new DOMParser().parseFromString(html, "text/html");
+            lista.innerHTML = doc.getElementById("lista-aulas").innerHTML;
+            activarEventos();
+        });
+}
+
+buscador.addEventListener("input", () => {
+    clearTimeout(timeout);
+    timeout = setTimeout(cargarAulas, 300);
+});
+
+orden.addEventListener("change", cargarAulas);
+
+/* =========================
+   AGREGAR
+========================= */
+document.getElementById("btn-agregar").onclick = () => {
+    const wrapper = document.getElementById("agregar-wrapper");
+
+    wrapper.innerHTML = `
+        <input id="nuevo-numero" placeholder="Aula"
+               class="input input-sm bg-[#0f172a] border-white/10 text-white w-20">
+
+        <input id="nueva-capacidad" type="number" placeholder="Capacidad"
+               class="input input-sm bg-[#0f172a] border-white/10 text-white w-28">
+
+        <select id="requerimientos" multiple
+                class="select select-bordered bg-[#0f172a] border-white/10 text-white h-32 w-full">
+            ${requerimientosGlobales.map(r =>
+                `<option value="${r.id}">${r.nombre}</option>`
+            ).join("")}
+        </select>
+
+        <button id="guardar-aula" class="btn btn-success btn-sm">✔</button>
+        <button onclick="location.reload()" class="btn btn-ghost btn-sm">✕</button>
+    `;
+
+    document.getElementById("guardar-aula").onclick = () => {
+        const numero = document.getElementById("nuevo-numero").value;
+        const capacidad = document.getElementById("nueva-capacidad").value;
+
+        const seleccionados = Array.from(
+            document.getElementById("requerimientos").selectedOptions
+        ).map(o => o.value);
+
+        const data = new URLSearchParams();
+        data.append("numero", numero);
+        data.append("capacidad", capacidad);
+        seleccionados.forEach(r => data.append("requerimientos[]", r));
+
+        fetch("{% url 'configuracion:crear_aula' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrftoken,
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: data.toString()
+        }).then(() => cargarAulas());
+    };
+};
+
+/* =========================
+   EDITAR / ELIMINAR
+========================= */
+function activarEventos() {
+
+    /* ELIMINAR */
+    document.querySelectorAll(".btn-eliminar").forEach(btn => {
+        btn.onclick = () => {
+            if (!confirm("¿Eliminar esta aula?")) return;
+
+            fetch(`/configuracion/aulas/${btn.dataset.id}/eliminar/`, {
+                method: "POST",
+                headers: { "X-CSRFToken": csrftoken }
+            }).then(() => cargarAulas());
+        };
+    });
+
+    /* EDITAR */
+    document.querySelectorAll(".btn-editar").forEach(btn => {
+        btn.onclick = () => {
+
+            const id = btn.dataset.id;
+            const fila = btn.closest(".flex.items-center.justify-between");
+            const contenido = fila.querySelector(".contenido-aula");
+
+            const numero = fila.dataset.numero;
+            const capacidad = fila.dataset.capacidad;
+
+            contenido.innerHTML = `
+                <input id="edit-numero-${id}"
+                       value="${numero}"
+                       class="input input-sm bg-[#0f172a] border-white/10 text-white w-20" />
+
+                <input id="edit-capacidad-${id}"
+                       type="number"
+                       value="${capacidad}"
+                       class="input input-sm bg-[#0f172a] border-white/10 text-white w-28" />
+
+                <select id="edit-requerimientos-${id}"
+                        multiple
+                        class="select select-bordered bg-[#0f172a] border-white/10 text-white h-24 w-full">
+                    ${requerimientosGlobales.map(r =>
+                        `<option value="${r.id}">${r.nombre}</option>`
+                    ).join("")}
+                </select>
+
+                <button class="btn btn-success btn-xs" id="guardar-${id}">✔</button>
+                <button class="btn btn-ghost btn-xs" id="cancelar-${id}">✕</button>
+            `;
+
+            document.getElementById(`guardar-${id}`).onclick = () => {
+
+                const nuevoNumero = document.getElementById(`edit-numero-${id}`).value;
+                const nuevaCapacidad = document.getElementById(`edit-capacidad-${id}`).value;
+
+                const seleccionados = Array.from(
+                    document.getElementById(`edit-requerimientos-${id}`).selectedOptions
+                ).map(o => o.value);
+
+                const data = new URLSearchParams();
+                data.append("numero", nuevoNumero);
+                data.append("capacidad", nuevaCapacidad);
+                seleccionados.forEach(r => data.append("requerimientos[]", r));
+
+                fetch(`/configuracion/aulas/${id}/editar/`, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": csrftoken,
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    body: data.toString()
+                }).then(() => cargarAulas());
+            };
+
+            document.getElementById(`cancelar-${id}`).onclick = () => cargarAulas();
+        };
+    });
+}
+
+activarEventos();
+</script>
+{% endblock %}
