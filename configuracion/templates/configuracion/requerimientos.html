@@ -1,5 +1,211 @@
 {% extends "base.html" %}
+{% block title %}Requerimientos{% endblock %}
 
 {% block content %}
-<h1 class="text-2xl font-bold">Configuración - Requerimientos</h1>
+<div class="max-w-5xl mx-auto">
+
+    <!-- TÍTULO -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-semibold text-white">Requerimientos</h1>
+        <p class="text-sm text-gray-400">
+            Gestiona los requerimientos disponibles del sistema
+        </p>
+    </div>
+
+    <!-- BARRA SUPERIOR -->
+    <form method="get" class="flex flex-col sm:flex-row gap-4 items-center justify-between mb-6">
+        {% csrf_token %}
+        <!-- BUSCADOR -->
+        <input type="text"
+               name="q"
+               value="{{ q }}"
+               placeholder="🔍 Buscar requerimiento..."
+               class="input input-bordered w-full sm:max-w-sm
+                      bg-[#0f172a] border-white/10 text-white"/>
+
+        <div class="flex items-center gap-3">
+
+            <!-- AGREGAR -->
+            <div id="agregar-wrapper" class="flex items-center gap-2">
+                <button type="button"
+                        id="btn-agregar"
+                        class="btn btn-primary btn-sm">
+                    ➕ Agregar
+                </button>
+            </div>
+
+            <!-- ORDEN -->
+            <select name="order"
+                    class="select select-bordered
+                           bg-[#0f172a] border-white/10 text-white">
+                <option value="asc" {% if order == 'asc' %}selected{% endif %}>
+                    A – Z
+                </option>
+                <option value="desc" {% if order == 'desc' %}selected{% endif %}>
+                    Z – A
+                </option>
+            </select>
+        </div>
+    </form>
+
+    <!-- LISTA -->
+    <div id="lista-requerimientos"
+         class="bg-[#020617] rounded-2xl border border-white/10 divide-y divide-white/5">
+
+        {% if requerimientos %}
+            {% for r in requerimientos %}
+            <div class="flex items-center justify-between p-4 hover:bg-white/5 transition">
+
+                <span class="text-white text-sm nombre-requerimiento"
+                      data-id="{{ r.id }}">
+                    {{ r.nombre }}
+                </span>
+
+                <div class="flex gap-2">
+                    <!-- EDITAR -->
+                    <button type="button"
+                            class="btn btn-xs btn-outline btn-editar"
+                            data-id="{{ r.id }}">
+                        ✏️
+                    </button>
+
+                    <!-- ELIMINAR -->
+                    <button type="button"
+                            class="btn btn-xs btn-error btn-outline btn-eliminar"
+                            data-id="{{ r.id }}">
+                        🗑️
+                    </button>
+                </div>
+
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="p-6 text-center text-gray-400 text-sm">
+                No se encontraron requerimientos
+            </div>
+        {% endif %}
+
+    </div>
+
+</div>
+
+<!-- =========================
+     JS
+========================= -->
+<script>
+const buscador = document.querySelector('input[name="q"]');
+const orden = document.querySelector('select[name="order"]');
+const lista = document.getElementById('lista-requerimientos');
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+
+let timeout = null;
+
+/* ======================
+   CARGAR LISTA
+====================== */
+function cargarRequerimientos() {
+    const q = buscador.value;
+    const order = orden.value;
+
+    fetch(`?q=${encodeURIComponent(q)}&order=${order}`)
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const nuevaLista = doc.getElementById('lista-requerimientos');
+            lista.innerHTML = nuevaLista.innerHTML;
+            activarEventos();
+        });
+}
+
+/* ======================
+   BUSCADOR DINÁMICO
+====================== */
+buscador.addEventListener('input', () => {
+    clearTimeout(timeout);
+    timeout = setTimeout(cargarRequerimientos, 300);
+});
+
+orden.addEventListener('change', cargarRequerimientos);
+
+/* ======================
+   AGREGAR
+====================== */
+document.getElementById("btn-agregar").addEventListener("click", () => {
+    const wrapper = document.getElementById("agregar-wrapper");
+
+    wrapper.innerHTML = `
+        <input id="nuevo-nombre"
+               class="input input-sm bg-[#0f172a] border-white/10 text-white w-40"
+               placeholder="Nuevo..." />
+        <button id="guardar-nuevo" class="btn btn-success btn-sm">✔</button>
+        <button id="cancelar-nuevo" class="btn btn-ghost btn-sm">✕</button>
+    `;
+
+    document.getElementById("guardar-nuevo").onclick = () => {
+        const nombre = document.getElementById("nuevo-nombre").value;
+
+        fetch("{% url 'configuracion:crear_requerimiento' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrftoken,
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `nombre=${encodeURIComponent(nombre)}`
+        }).then(() => cargarRequerimientos());
+    };
+
+    document.getElementById("cancelar-nuevo").onclick = () => location.reload();
+});
+
+/* ======================
+   EDITAR / ELIMINAR
+====================== */
+function activarEventos() {
+
+    document.querySelectorAll(".btn-editar").forEach(btn => {
+        btn.onclick = () => {
+            const id = btn.dataset.id;
+            const span = document.querySelector(`.nombre-requerimiento[data-id="${id}"]`);
+            const original = span.textContent.trim();
+
+            span.innerHTML = `
+                <input value="${original}"
+                       class="input input-sm bg-[#0f172a] border-white/10 text-white w-40"
+                       id="edit-${id}" />
+            `;
+
+            btn.textContent = "✔";
+            btn.onclick = () => {
+                const nuevo = document.getElementById(`edit-${id}`).value;
+
+                fetch(`/configuracion/requerimientos/${id}/editar/`, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": csrftoken,
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    body: `nombre=${encodeURIComponent(nuevo)}`
+                }).then(() => cargarRequerimientos());
+            };
+        };
+    });
+
+    document.querySelectorAll(".btn-eliminar").forEach(btn => {
+        btn.onclick = () => {
+            const id = btn.dataset.id;
+
+            if (!confirm("¿Eliminar este requerimiento?")) return;
+
+            fetch(`/configuracion/requerimientos/${id}/eliminar/`, {
+                method: "POST",
+                headers: { "X-CSRFToken": csrftoken }
+            }).then(() => cargarRequerimientos());
+        };
+    });
+}
+
+activarEventos();
+</script>
+
 {% endblock %}
