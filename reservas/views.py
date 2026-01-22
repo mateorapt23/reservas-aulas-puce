@@ -3,8 +3,13 @@ from configuracion.models import Aula, Catedra, Requerimiento
 from reservas.models import Reserva
 from datetime import date, datetime
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from datetime import date, datetime, timedelta
+from django.db.models import Q
+from django.template.loader import render_to_string
+from django.views.decorators.http import require_http_methods, require_POST
+from django.views.decorators.csrf import csrf_exempt
+
 
 
 def nueva_reserva(request):
@@ -155,3 +160,128 @@ def api_agenda_aula(request):
         })
 
     return JsonResponse(data, safe=False)
+
+ORDER_MAP = {
+    "docente": "docente",
+    "-docente": "-docente",
+    "catedra": "catedra__nombre",
+    "-catedra": "-catedra__nombre",
+    "aula": "aula__numero",
+    "-aula": "-aula__numero",
+    "fecha": "fecha",
+    "-fecha": "-fecha",
+    "hora_inicio": "hora_inicio",
+    "-hora_inicio": "-hora_inicio",
+    "hora_fin": "hora_fin",
+    "-hora_fin": "-hora_fin",
+    "tipo": "tipo",          # ← agregado para que funcione orden por tipo
+    "-tipo": "-tipo",
+}
+
+
+def lista_reservas(request):
+    tipo = request.GET.get("tipo", "ocasional")
+    q = request.GET.get("q", "")
+    order = request.GET.get("order", "fecha")
+
+    reservas = Reserva.objects.select_related(
+        "catedra",
+        "aula"
+    ).filter(tipo=tipo)
+
+    if q:
+        reservas = reservas.filter(
+            Q(docente__icontains=q) |
+            Q(catedra__nombre__icontains=q) |
+            Q(aula__numero__icontains=q)
+        )
+
+    order_by = ORDER_MAP.get(order, "fecha")
+    reservas = reservas.order_by(order_by)
+
+    # 👇 AGREGAR ESTO: Cargar todas las cátedras y aulas para los selects
+    catedras = Catedra.objects.all().order_by('nombre')
+    aulas = Aula.objects.all().order_by('numero')
+
+    context = {
+        "reservas": reservas,
+        "tipo_actual": tipo,
+        "order": order,
+        "q": q,
+        "catedras": catedras,  # 👈 Nuevo
+        "aulas": aulas,        # 👈 Nuevo
+    }
+
+    # Si es AJAX, devolver solo la tabla parcial
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return render(request, 'reservas/lista_reservas_tabla.html', context)
+
+    # Vista normal (página completa)
+    return render(request, 'reservas/lista_reservas.html', context)
+
+@require_POST
+def update_reserva(request, id):
+    reserva = get_object_or_404(Reserva, pk=id)
+
+    try:
+        # Actualizar solo si el campo fue enviado
+        if 'docente' in request.POST:
+            reserva.docente = request.POST.get('docente').strip()
+        
+        if 'catedra' in request.POST and request.POST.get('catedra'):
+            reserva.catedra_id = int(request.POST.get('catedra'))
+        
+        if 'aula' in request.POST and request.POST.get('aula'):
+            reserva.aula_id = int(request.POST.get('aula'))
+        
+        if 'fecha' in request.POST:
+            reserva.fecha = datetime.strptime(request.POST.get('fecha'), '%Y-%m-%d').date()
+        
+        if 'hora_inicio' in request.POST:
+            reserva.hora_inicio = datetime.strptime(request.POST.get('hora_inicio'), '%H:%M').time()
+        
+        if 'hora_fin' in request.POST:
+            reserva.hora_fin = datetime.strptime(request.POST.get('hora_fin'), '%H:%M').time()
+        
+        if 'tipo' in request.POST:
+            reserva.tipo = request.POST.get('tipo')
+
+        # Validación básica
+        if reserva.hora_inicio >= reserva.hora_fin:
+            return JsonResponse({
+                'success': False, 
+                'message': 'La hora de fin debe ser posterior a la hora de inicio'
+            }, status=400)
+
+        reserva.save()
+        
+        # 👇 CAMBIO: Agregar más información en la respuesta
+        return JsonResponse({
+            'success': True,
+            'message': 'Reserva actualizada correctamente'
+        })
+
+    except (ValueError, TypeError) as e:
+        return JsonResponse({
+            'success': False, 
+            'message': f'Error en los datos: {str(e)}'
+        }, status=400)
+    except Exception as e:
+        # 👇 NUEVO: Capturar cualquier otro error
+        return JsonResponse({
+            'success': False,
+            'message': f'Error inesperado: {str(e)}'
+        }, status=500)
+
+
+@require_POST
+def delete_reservas(request):
+    ids = request.POST.getlist('ids[]')
+    if not ids:
+        return JsonResponse({'success': False, 'message': 'No se seleccionaron reservas'}, status=400)
+    
+    try:
+        Reserva.objects.filter(id__in=ids).delete()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)

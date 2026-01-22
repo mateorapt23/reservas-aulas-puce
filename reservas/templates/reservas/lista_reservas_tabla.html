@@ -1,0 +1,72 @@
+<table class="table table-sm text-white w-full">
+    <thead class="bg-[#020617]">
+        <tr>
+            <th class="w-10"><input type="checkbox" id="select-all"></th>
+            <th>
+                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'docente' %}-{% endif %}docente" class="order-link">
+                    Docente
+                    {% if order == 'docente' %}↑{% elif order == '-docente' %}↓{% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'catedra' %}-{% endif %}catedra" class="order-link">
+                    Cátedra
+                    {% if order == 'catedra' %}↑{% elif order == '-catedra' %}↓{% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'aula' %}-{% endif %}aula" class="order-link">
+                    Aula
+                    {% if order == 'aula' %}↑{% elif order == '-aula' %}↓{% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'fecha' %}-{% endif %}fecha" class="order-link">
+                    Fecha
+                    {% if order == 'fecha' %}↑{% elif order == '-fecha' %}↓{% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'hora_inicio' %}-{% endif %}hora_inicio" class="order-link">
+                    Hora inicio
+                    {% if order == 'hora_inicio' %}↑{% elif order == '-hora_inicio' %}↓{% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'hora_fin' %}-{% endif %}hora_fin" class="order-link">
+                    Hora fin
+                    {% if order == 'hora_fin' %}↑{% elif order == '-hora_fin' %}↓{% endif %}
+                </a>
+            </th>
+            <th>Tipo</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in reservas %}
+        <tr data-id="{{ r.id }}" 
+            data-catedra-id="{{ r.catedra.id }}"
+            data-aula-id="{{ r.aula.id }}"
+            class="hover:bg-white/5 transition">
+            <td><input type="checkbox" class="select-row checkbox checkbox-sm"></td>
+            <td class="editable" data-field="docente">{{ r.docente }}</td>
+            <td class="editable" data-field="catedra" data-id="{{ r.catedra.id }}">{{ r.catedra.nombre }}</td>
+            <td class="editable" data-field="aula" data-id="{{ r.aula.id }}">{{ r.aula.numero }}</td>
+            <td class="editable" data-field="fecha">{{ r.fecha|date:"Y-m-d" }}</td>
+            <td class="editable" data-field="hora_inicio">{{ r.hora_inicio|time:"H:i" }}</td>
+            <td class="editable" data-field="hora_fin">{{ r.hora_fin|time:"H:i" }}</td>
+            <td class="editable" data-field="tipo">{{ r.get_tipo_display }}</td>
+            <td class="flex gap-2">
+                <button class="btn-editar btn btn-xs btn-outline" title="Editar">✏️</button>
+                <button class="btn-eliminar btn btn-xs btn-error btn-outline" title="Eliminar">🗑️</button>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="9" class="text-center text-gray-400 py-6">
+                No hay reservas registradas
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
