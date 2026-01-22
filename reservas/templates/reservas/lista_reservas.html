@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="p-6 max-w-7xl mx-auto">
+
+    <h1 class="text-2xl font-bold text-white mb-4">📋 Lista de Reservas</h1>
+
+    <!-- Pestañas -->
+    <div class="tabs tabs-boxed mb-6">
+        <a href="?tipo=ocasional" class="tab {% if tipo_actual == 'ocasional' %}tab-active{% endif %}">Ocasionales</a>
+        <a href="?tipo=semestral" class="tab {% if tipo_actual == 'semestral' %}tab-active{% endif %}">Semestrales</a>
+    </div>
+
+    {% csrf_token %}
+    <!-- Buscador -->
+    <form method="get" id="form-busqueda" class="mb-4 flex items-center gap-4">
+        <input type="hidden" name="tipo" value="{{ tipo_actual }}">
+        <input type="text" id="buscador" name="q" value="{{ q }}"
+               placeholder="Buscar docente, cátedra o aula"
+               class="input input-sm w-full max-w-md bg-[#0f172a] border-white/10 text-white">
+        
+        <button id="btn-eliminar-seleccionadas" class="btn btn-error btn-sm" type="button" disabled>
+            Eliminar seleccionadas
+        </button>
+    </form>
+
+    <!-- Tabla -->
+    <div id="tabla-container" class="overflow-x-auto rounded-xl border border-white/10">
+        {% include 'reservas/lista_reservas_tabla.html' %}
+    </div>
+
+</div>
+<script>
+    window.APP_URLS = {
+        updateReserva: function(id) {
+            return "{% url 'reservas:update_reserva' 0 %}".replace('/0/', '/' + id + '/');
+        },
+        deleteReservas: "{% url 'reservas:delete_reservas' %}",
+        listaReservas: "{% url 'reservas:lista_reservas' %}"
+    };
+    window.CSRF_TOKEN = "{{ csrf_token }}";
+    
+    // 👇 AGREGAR ESTO: Datos para los selects
+    window.APP_DATA = {
+        catedras: [
+            {% for c in catedras %}
+            {id: {{ c.id }}, nombre: "{{ c.nombre|escapejs }}"},
+            {% endfor %}
+        ],
+        aulas: [
+            {% for a in aulas %}
+            {id: {{ a.id }}, numero: "{{ a.numero|escapejs }}"},
+            {% endfor %}
+        ]
+    };
+</script>
+<script src="{% static 'reservas/lista_reservas.js' %}"></script>
+
+{% endblock %}
