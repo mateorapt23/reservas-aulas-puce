@@ -55,7 +55,19 @@
             <td class="editable" data-field="fecha">{{ r.fecha|date:"Y-m-d" }}</td>
             <td class="editable" data-field="hora_inicio">{{ r.hora_inicio|time:"H:i" }}</td>
             <td class="editable" data-field="hora_fin">{{ r.hora_fin|time:"H:i" }}</td>
-            <td class="editable" data-field="tipo">{{ r.get_tipo_display }}</td>
+            <td data-field="tipo">
+                {% if r.tipo == 'ocasional' %}
+                    <span class="badge badge-success badge-sm gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-3 h-3 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Ocasional
+                    </span>
+                {% else %}
+                    <span class="badge badge-info badge-sm gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-3 h-3 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        Semestral
+                    </span>
+                {% endif %}
+            </td>
             <td class="flex gap-2">
                 <button class="btn-editar btn btn-xs btn-outline" title="Editar">✏️</button>
                 <button class="btn-eliminar btn btn-xs btn-error btn-outline" title="Eliminar">🗑️</button>

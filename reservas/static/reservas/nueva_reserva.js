@@ -112,5 +112,184 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+    const buscador = document.getElementById('buscador-requerimientos');
+
+    if (buscador) {
+        const items = document.querySelectorAll('.requerimiento-item');
+
+        buscador.addEventListener('input', () => {
+            const texto = buscador.value.toLowerCase();
+
+            items.forEach(item => {
+                const nombre = item
+                    .querySelector('.requerimiento-nombre')
+                    .innerText
+                    .toLowerCase();
+
+                item.style.display = nombre.includes(texto)
+                    ? 'flex'
+                    : 'none';
+            });
+        });
+    }
+    const buscadorCatedra = document.getElementById('buscador-catedra');
+    const listaCatedras = document.getElementById('lista-catedras');
+    const inputCatedra = document.getElementById('catedra-seleccionada');
+
+    if (buscadorCatedra) {
+        const items = listaCatedras.querySelectorAll('.catedra-item');
+
+        buscadorCatedra.addEventListener('focus', () => {
+            listaCatedras.classList.remove('hidden');
+        });
+
+        buscadorCatedra.addEventListener('input', () => {
+            const texto = buscadorCatedra.value.toLowerCase();
+            listaCatedras.classList.remove('hidden');
+
+            items.forEach(item => {
+                const nombre = item.innerText.toLowerCase();
+                item.style.display = nombre.includes(texto) ? 'block' : 'none';
+            });
+        });
+
+        items.forEach(item => {
+            item.addEventListener('click', () => {
+                buscadorCatedra.value = item.innerText;
+                inputCatedra.value = item.dataset.id;
+                listaCatedras.classList.add('hidden');
+            });
+        });
+
+        // cerrar al hacer click fuera
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#buscador-catedra') &&
+                !e.target.closest('#lista-catedras')) {
+                listaCatedras.classList.add('hidden');
+            }
+        });
+
+    }
+    function crearTimePicker(inputId, pickerId) {
+        const input  = document.getElementById(inputId);
+        const picker = document.getElementById(pickerId);
+
+        if (!input || !picker) {
+            console.warn(`No se encontró ${inputId} o ${pickerId}`);
+            return;
+        }
+
+        // Asegurarse de que empiece oculto
+        picker.classList.add('hidden');
+        picker.style.display = 'none';
+
+        // Generar horas 07:00 a 21:30
+        const horas = [];
+        for (let h = 7; h <= 21; h++) {
+            horas.push(h.toString().padStart(2, '0'));
+        }
+
+        const minutos = ['00', '30'];
+
+        // Estructura HTML del picker
+        picker.innerHTML = `
+            <div class="time-column" id="${pickerId}-horas"></div>
+            <div class="time-column" id="${pickerId}-minutos"></div>
+        `;
+
+        const colHoras   = picker.querySelector(`#${pickerId}-horas`);
+        const colMinutos = picker.querySelector(`#${pickerId}-minutos`);
+
+        let horaSeleccionada   = null;
+        let minutoSeleccionado = null;
+
+        function confirmarSeleccion() {
+            if (horaSeleccionada && minutoSeleccionado) {
+                input.value = `${horaSeleccionada}:${minutoSeleccionado}`;
+                picker.classList.add('hidden');
+                picker.style.display = 'none';
+                input.blur(); // ayuda a que se vea más natural
+            }
+        }
+
+        // Llenar horas
+        horas.forEach(h => {
+            const div = document.createElement('div');
+            div.className = 'time-option';
+            div.textContent = h;
+            div.addEventListener('click', () => {
+                horaSeleccionada = h;
+                confirmarSeleccion();
+            });
+            colHoras.appendChild(div);
+        });
+
+        // Llenar minutos
+        minutos.forEach(m => {
+            const div = document.createElement('div');
+            div.className = 'time-option';
+            div.textContent = m;
+            div.addEventListener('click', () => {
+                minutoSeleccionado = m;
+                confirmarSeleccion();
+            });
+            colMinutos.appendChild(div);
+        });
+
+        // Abrir al enfocar
+        input.addEventListener('focus', () => {
+            // Cerrar cualquier otro picker
+            document.querySelectorAll('.time-picker').forEach(p => {
+                p.classList.add('hidden');
+                p.style.display = 'none';
+            });
+
+            picker.classList.remove('hidden');
+            picker.style.display = 'grid';
+        });
+
+        // Cerrar al hacer clic fuera
+        const cerrarFuera = (e) => {
+            if (picker.classList.contains('hidden')) return;
+            if (!input.contains(e.target) && !picker.contains(e.target)) {
+                picker.classList.add('hidden');
+                picker.style.display = 'none';
+            }
+        };
+
+        document.addEventListener('click', cerrarFuera, true);
+    }
+
+    // Inicializar ambos pickers
+    crearTimePicker('horaInicioInput', 'pickerInicio');
+    crearTimePicker('horaFinInput',    'pickerFin');
+
+    // Seguridad extra: ocultar al cargar por si acaso
+    setTimeout(() => {
+        document.querySelectorAll('.time-picker').forEach(p => {
+            p.classList.add('hidden');
+            p.style.display = 'none';
+        });
+    }, 50);
+
+    const inputBuscador = document.getElementById('buscador-catedra');
+    const inputHidden   = document.getElementById('catedra-seleccionada');
+
+    if (inputBuscador && inputHidden && inputHidden.value) {
+        // Buscar el nombre correspondiente al ID guardado
+        const itemSeleccionado = document.querySelector(`.catedra-item[data-id="${inputHidden.value}"]`);
+        
+        if (itemSeleccionado) {
+            inputBuscador.value = itemSeleccionado.textContent.trim();
+            // Opcional: marcarlo como activo en la lista (por si se vuelve a abrir)
+            document.querySelectorAll('.catedra-item').forEach(item => {
+                item.classList.remove('bg-white/20', 'font-medium');
+            });
+            itemSeleccionado.classList.add('bg-white/20', 'font-medium');
+        } else {
+            // Si por alguna razón no existe el item, mostrar el ID o dejar vacío
+            inputBuscador.value = '(Cátedra seleccionada)';
+        }
+    }
 
 });

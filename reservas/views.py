@@ -4,12 +4,21 @@ from reservas.models import Reserva
 from datetime import date, datetime
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, time
 from django.db.models import Q
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import csrf_exempt
 
+horas = []
+for h in range(7, 22):  # ejemplo 07:00 - 22:30
+    horas.append(f"{h:02d}:00")
+    horas.append(f"{h:02d}:30")
+
+context = {
+    "horas": horas,
+    # otros datos
+}
 
 
 def nueva_reserva(request):
@@ -60,7 +69,8 @@ def nueva_reserva(request):
         'requerimientos': requerimientos,
         'aulas': aulas_filtradas,
         'reservas_aula': reservas_aula,
-        'req_seleccionados': req_ids,  # 👈 ahora SIEMPRE existe
+        'req_seleccionados': req_ids,
+        'horas': horas,  # 👈 ESTA LÍNEA
     }
 
     return render(request, 'reservas/nueva_reserva.html', context)
@@ -242,9 +252,6 @@ def update_reserva(request, id):
         
         if 'hora_fin' in request.POST:
             reserva.hora_fin = datetime.strptime(request.POST.get('hora_fin'), '%H:%M').time()
-        
-        if 'tipo' in request.POST:
-            reserva.tipo = request.POST.get('tipo')
 
         # Validación básica
         if reserva.hora_inicio >= reserva.hora_fin:
@@ -253,9 +260,22 @@ def update_reserva(request, id):
                 'message': 'La hora de fin debe ser posterior a la hora de inicio'
             }, status=400)
 
+        # Validación de choque (excluyendo la reserva actual)
+        choque = Reserva.objects.filter(
+            aula=reserva.aula,
+            fecha=reserva.fecha,
+            hora_inicio__lt=reserva.hora_fin,
+            hora_fin__gt=reserva.hora_inicio
+        ).exclude(id=reserva.id).exists()
+
+        if choque:
+            return JsonResponse({
+                'success': False, 
+                'message': 'Choque de horario con otra reserva existente'
+            }, status=400)
+
         reserva.save()
         
-        # 👇 CAMBIO: Agregar más información en la respuesta
         return JsonResponse({
             'success': True,
             'message': 'Reserva actualizada correctamente'
@@ -267,12 +287,10 @@ def update_reserva(request, id):
             'message': f'Error en los datos: {str(e)}'
         }, status=400)
     except Exception as e:
-        # 👇 NUEVO: Capturar cualquier otro error
         return JsonResponse({
             'success': False,
             'message': f'Error inesperado: {str(e)}'
         }, status=500)
-
 
 @require_POST
 def delete_reservas(request):

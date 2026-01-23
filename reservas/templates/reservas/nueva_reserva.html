@@ -48,21 +48,46 @@
                         </div>
 
                         <!-- CÁTEDRA -->
-                        <div>
+                        <div class="relative">
                             <label class="label pb-1">
                                 <span class="label-text text-gray-300">Cátedra</span>
                             </label>
-                            <select name="catedra"
-                                    required
-                                    class="select select-bordered w-full bg-[#0f172a] border-white/10 text-white text-base">
-                                <option disabled selected>Seleccione una cátedra</option>
+
+                            <!-- INPUT BUSCADOR -->
+                            <input
+                                type="text"
+                                id="buscador-catedra"
+                                placeholder="Buscar cátedra..."
+                                autocomplete="off"
+                                class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white"
+                            />
+
+                            <!-- INPUT REAL (DJANGO) -->
+                            <input
+                                type="hidden"
+                                name="catedra"
+                                id="catedra-seleccionada"
+                                value="{{ request.POST.catedra }}"
+                                required
+                            />
+
+                            <!-- LISTA FLOTANTE -->
+                            <div
+                                id="lista-catedras"
+                                class="absolute top-full left-0 right-0 mt-1 z-50
+                                    max-h-40 overflow-y-auto space-y-1 p-2 rounded-xl
+                                    bg-[#020617] border border-white/10 shadow-xl hidden"
+                            >
                                 {% for c in catedras %}
-                                    <option value="{{ c.id }}"
-                                        {% if request.POST.catedra == c.id|stringformat:"s" %}selected{% endif %}>
+                                    <div
+                                        class="catedra-item px-3 py-2 rounded-lg cursor-pointer
+                                            hover:bg-white/10 text-gray-300"
+                                        data-id="{{ c.id }}"
+                                    >
                                         {{ c.nombre }}
-                                    </option>
+                                    </div>
                                 {% endfor %}
-                            </select>
+                            </div>
                         </div>
                     </div>
 
@@ -71,19 +96,37 @@
                         <label class="label pb-1">
                             <span class="label-text text-gray-300">Requerimientos</span>
                         </label>
-                        <select name="requerimientos"
-                                multiple
-                                required
-                                class="select select-bordered w-full bg-[#0f172a] border-white/10 text-white h-36">  <!-- altura moderada pero cómoda -->
+
+                        <!-- BUSCADOR -->
+                        <input
+                            type="text"
+                            id="buscador-requerimientos"
+                            placeholder="Buscar requerimiento..."
+                            class="input input-bordered input-sm w-full bg-[#0f172a] border-white/10 text-white mb-3"
+                        />
+
+                        <!-- LISTA CON SCROLL -->
+                        <div
+                            id="lista-requerimientos"
+                            class="max-h-48 overflow-y-auto space-y-2 p-3 rounded-xl
+                                bg-[#0f172a] border border-white/10"
+                        >
                             {% for r in requerimientos %}
-                                <option value="{{ r.id }}"
-                                    {% if r.id|stringformat:"s" in req_seleccionados %}selected{% endif %}>
-                                    {{ r.nombre }}
-                                </option>
+                                <label class="flex items-center gap-3 text-gray-300 cursor-pointer requerimiento-item">
+                                    <input
+                                        type="checkbox"
+                                        name="requerimientos"
+                                        value="{{ r.id }}"
+                                        class="checkbox checkbox-primary"
+                                        {% if r.id|stringformat:"s" in req_seleccionados %}checked{% endif %}
+                                    >
+                                    <span class="requerimiento-nombre">{{ r.nombre }}</span>
+                                </label>
                             {% endfor %}
-                        </select>
-                        <p class="text-xs text-gray-500 mt-1">
-                            Mantén presionado Ctrl para seleccionar varios
+                        </div>
+
+                        <p class="text-xs text-gray-500 mt-2">
+                            Selecciona uno o varios requerimientos
                         </p>
                     </div>
 
@@ -103,27 +146,37 @@
                         </div>
 
                         <!-- HORA INICIO -->
-                        <div>
+                        <div class="relative">
                             <label class="label pb-1">
                                 <span class="label-text text-gray-300">Hora de inicio</span>
                             </label>
-                            <input type="time"
+
+                            <input type="text"
                                 name="hora_inicio"
-                                required
-                                value="{{ request.POST.hora_inicio }}"
-                                class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white text-base"/>
+                                id="horaInicioInput"
+                                readonly
+                                value="{{ request.POST.hora_inicio|default:'' }}"
+                                placeholder="Selecciona hora"
+                                class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white cursor-pointer"/>
+
+                            <div id="pickerInicio" class="time-picker hidden absolute z-50"></div>
                         </div>
 
                         <!-- HORA FIN -->
-                        <div>
+                        <div class="relative">
                             <label class="label pb-1">
                                 <span class="label-text text-gray-300">Hora de fin</span>
                             </label>
-                            <input type="time"
+
+                            <input type="text"
                                 name="hora_fin"
-                                required
-                                value="{{ request.POST.hora_fin }}"
-                                class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white text-base"/>
+                                id="horaFinInput"
+                                readonly
+                                value="{{ request.POST.hora_fin|default:'' }}"
+                                placeholder="Selecciona hora"
+                                class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white cursor-pointer"/>
+
+                            <div id="pickerFin" class="time-picker hidden absolute z-50"></div>
                         </div>
                     </div>
 
@@ -322,7 +375,46 @@
 <style>
     html {
     scroll-behavior: smooth;
-}
+    }
+    .time-picker {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        z-index: 9999 !important;
+        background: #020617;
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 12px;
+        margin-top: 6px;
+        padding: 12px;
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.6);
+        display: none;           /* importante: usamos display en JS */
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .time-column {
+        max-height: 160px;
+        overflow-y: auto;
+        padding: 4px;
+    }
+
+    .time-option {
+        padding: 8px 4px;
+        text-align: center;
+        border-radius: 6px;
+        cursor: pointer;
+        color: #e5e7eb;
+        transition: background 0.1s;
+    }
+
+    .time-option:hover {
+        background: rgba(255,255,255,0.08);
+    }
+
+    .time-option:active {
+        background: rgba(59, 130, 246, 0.2); /* azul suave al click */
+    }
 </style>
 
 {% endblock %}

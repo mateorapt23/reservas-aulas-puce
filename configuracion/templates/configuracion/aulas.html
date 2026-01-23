@@ -161,30 +161,60 @@ document.getElementById("btn-agregar").onclick = () => {
     const wrapper = document.getElementById("agregar-wrapper");
 
     wrapper.innerHTML = `
-        <input id="nuevo-numero" placeholder="Aula"
-               class="input input-sm bg-[#0f172a] border-white/10 text-white w-20">
+        <div class="flex flex-col gap-3 w-full max-w-md">
+            <div class="flex gap-2">
+                <input id="nuevo-numero" placeholder="Aula"
+                       class="input input-sm bg-[#0f172a] border-white/10 text-white w-20">
 
-        <input id="nueva-capacidad" type="number" placeholder="Capacidad"
-               class="input input-sm bg-[#0f172a] border-white/10 text-white w-28">
+                <input id="nueva-capacidad" type="number" placeholder="Capacidad"
+                       class="input input-sm bg-[#0f172a] border-white/10 text-white w-28">
+            </div>
 
-        <select id="requerimientos" multiple
-                class="select select-bordered bg-[#0f172a] border-white/10 text-white h-32 w-full">
-            ${requerimientosGlobales.map(r =>
-                `<option value="${r.id}">${r.nombre}</option>`
-            ).join("")}
-        </select>
+            <div>
+                <input type="text"
+                       id="buscador-req-nuevo"
+                       placeholder="Buscar requerimiento..."
+                       class="input input-bordered input-sm w-full bg-[#0f172a] border-white/10 text-white mb-2" />
 
-        <button id="guardar-aula" class="btn btn-success btn-sm">✔</button>
-        <button onclick="location.reload()" class="btn btn-ghost btn-sm">✕</button>
+                <div id="lista-req-nuevo"
+                     class="max-h-40 overflow-y-auto space-y-2 p-3 rounded-xl bg-[#0f172a] border border-white/10">
+                    ${requerimientosGlobales.map(r => `
+                        <label class="flex items-center gap-3 text-gray-300 cursor-pointer requerimiento-item-nuevo">
+                            <input type="checkbox"
+                                   class="checkbox checkbox-primary checkbox-sm"
+                                   value="${r.id}">
+                            <span class="requerimiento-nombre-nuevo">${r.nombre}</span>
+                        </label>
+                    `).join("")}
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button id="guardar-aula" class="btn btn-success btn-sm">✓ Guardar</button>
+                <button onclick="location.reload()" class="btn btn-ghost btn-sm">✕ Cancelar</button>
+            </div>
+        </div>
     `;
+
+    // Activar buscador
+    const buscadorReqNuevo = document.getElementById('buscador-req-nuevo');
+    const itemsReqNuevo = document.querySelectorAll('.requerimiento-item-nuevo');
+
+    buscadorReqNuevo.addEventListener('input', () => {
+        const texto = buscadorReqNuevo.value.toLowerCase();
+        itemsReqNuevo.forEach(item => {
+            const nombre = item.querySelector('.requerimiento-nombre-nuevo').innerText.toLowerCase();
+            item.style.display = nombre.includes(texto) ? 'flex' : 'none';
+        });
+    });
 
     document.getElementById("guardar-aula").onclick = () => {
         const numero = document.getElementById("nuevo-numero").value;
         const capacidad = document.getElementById("nueva-capacidad").value;
 
         const seleccionados = Array.from(
-            document.getElementById("requerimientos").selectedOptions
-        ).map(o => o.value);
+            document.querySelectorAll('#lista-req-nuevo input[type="checkbox"]:checked')
+        ).map(cb => cb.value);
 
         const data = new URLSearchParams();
         data.append("numero", numero);
@@ -231,26 +261,58 @@ function activarEventos() {
             const capacidad = fila.dataset.capacidad;
 
             contenido.innerHTML = `
-                <input id="edit-numero-${id}"
-                       value="${numero}"
-                       class="input input-sm bg-[#0f172a] border-white/10 text-white w-20" />
+                <div class="flex flex-col gap-3 w-full">
+                    <div class="flex gap-2">
+                        <input id="edit-numero-${id}"
+                               value="${numero}"
+                               placeholder="Aula"
+                               class="input input-sm bg-[#0f172a] border-white/10 text-white w-20" />
 
-                <input id="edit-capacidad-${id}"
-                       type="number"
-                       value="${capacidad}"
-                       class="input input-sm bg-[#0f172a] border-white/10 text-white w-28" />
+                        <input id="edit-capacidad-${id}"
+                               type="number"
+                               value="${capacidad}"
+                               placeholder="Capacidad"
+                               class="input input-sm bg-[#0f172a] border-white/10 text-white w-28" />
+                    </div>
 
-                <select id="edit-requerimientos-${id}"
-                        multiple
-                        class="select select-bordered bg-[#0f172a] border-white/10 text-white h-24 w-full">
-                    ${requerimientosGlobales.map(r =>
-                        `<option value="${r.id}">${r.nombre}</option>`
-                    ).join("")}
-                </select>
+                    <div class="w-full">
+                        <input type="text"
+                               id="buscador-req-${id}"
+                               placeholder="Buscar requerimiento..."
+                               class="input input-bordered input-sm w-full bg-[#0f172a] border-white/10 text-white mb-2" />
 
-                <button class="btn btn-success btn-xs" id="guardar-${id}">✔</button>
-                <button class="btn btn-ghost btn-xs" id="cancelar-${id}">✕</button>
+                        <div id="lista-req-${id}"
+                             class="max-h-40 overflow-y-auto space-y-2 p-3 rounded-xl bg-[#0f172a] border border-white/10">
+                            ${requerimientosGlobales.map(r => `
+                                <label class="flex items-center gap-3 text-gray-300 cursor-pointer requerimiento-item-edit">
+                                    <input type="checkbox"
+                                           class="checkbox checkbox-primary checkbox-sm"
+                                           value="${r.id}"
+                                           data-req-id="${r.id}">
+                                    <span class="requerimiento-nombre-edit">${r.nombre}</span>
+                                </label>
+                            `).join("")}
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button class="btn btn-success btn-sm" id="guardar-${id}">✓ Guardar</button>
+                        <button class="btn btn-ghost btn-sm" id="cancelar-${id}">✕ Cancelar</button>
+                    </div>
+                </div>
             `;
+
+            // Activar buscador de requerimientos
+            const buscadorReq = document.getElementById(`buscador-req-${id}`);
+            const itemsReq = document.querySelectorAll('.requerimiento-item-edit');
+
+            buscadorReq.addEventListener('input', () => {
+                const texto = buscadorReq.value.toLowerCase();
+                itemsReq.forEach(item => {
+                    const nombre = item.querySelector('.requerimiento-nombre-edit').innerText.toLowerCase();
+                    item.style.display = nombre.includes(texto) ? 'flex' : 'none';
+                });
+            });
 
             document.getElementById(`guardar-${id}`).onclick = () => {
 
@@ -258,8 +320,8 @@ function activarEventos() {
                 const nuevaCapacidad = document.getElementById(`edit-capacidad-${id}`).value;
 
                 const seleccionados = Array.from(
-                    document.getElementById(`edit-requerimientos-${id}`).selectedOptions
-                ).map(o => o.value);
+                    document.querySelectorAll(`#lista-req-${id} input[type="checkbox"]:checked`)
+                ).map(cb => cb.value);
 
                 const data = new URLSearchParams();
                 data.append("numero", nuevoNumero);
