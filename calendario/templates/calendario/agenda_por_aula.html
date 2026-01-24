@@ -4,11 +4,11 @@
 {% block title %}Agenda por Aula{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto p-6 space-y-6">
+<div class="max-w-full mx-auto p-6 space-y-6">
 
     <!-- TÍTULO -->
-    <h1 class="text-3xl font-bold text-white">Calendario - Agenda por Aula</h1>
-    <p class="text-gray-400">Selecciona el aula y la fecha para ver la agenda diaria</p>
+    <h1 class="text-3xl font-bold text-white">Calendario - Agenda Semanal por Aula</h1>
+    <p class="text-gray-400">Selecciona el aula y una fecha para ver la agenda de toda la semana</p>
 
     <!-- FILTROS -->
     <div class="flex flex-wrap gap-4 items-end mt-4">
@@ -16,78 +16,213 @@
             <label class="label text-gray-300">Aula</label>
             <select id="select-aula" class="select select-bordered w-48 bg-[#0f172a] text-white border-white/10">
                 <option value="">Selecciona un aula</option>
-
                 {% for aula in aulas %}
-                    <option value="{{ aula.id }}">
-                        Aula {{ aula.numero }}
-                    </option>
+                    <option value="{{ aula.id }}">Aula {{ aula.numero }}</option>
                 {% endfor %}
             </select>
         </div>
 
         <div>
-            <label class="label text-gray-300">Fecha</label>
-            <input type="date" id="fecha" class="input input-bordered bg-[#0f172a] text-white border-white/10 w-48">
+            <label class="label text-gray-300">Fecha (cualquier día de la semana)</label>
+            <input type="date" id="fecha" class="input input-bordered bg-[#0f172a] text-white border-white/10 w-64">
         </div>
 
         <button id="btn-filtrar" class="btn btn-primary">Filtrar</button>
     </div>
 
-    <!-- BLOQUE DE AGENDA DIARIA -->
-    <div class="flex border border-white/10 mt-6 h-[900px] overflow-y-hidden rounded-2xl bg-[#1e293b] relative">
-        
-        <!-- HORAS -->
-        <div id="col-horas" class="w-20 border-r border-white/10 text-gray-400 text-sm relative"></div>
-        
-        <!-- RESERVAS -->
-        <div id="col-reservas" class="flex-1 relative bg-[#0f172a]"></div>
+    <!-- INFO SEMANA -->
+    <div id="info-semana" class="text-gray-400 text-sm hidden">
+        Mostrando semana del <span id="fecha-inicio" class="text-white font-medium"></span> 
+        al <span id="fecha-fin" class="text-white font-medium"></span>
+    </div>
 
+    <!-- CONTENEDOR SEMANAL -->
+    <div class="overflow-x-auto border border-white/10 rounded-2xl bg-[#1e293b]">
+        <div id="calendario-container" class="flex min-h-[930px] relative">
+            
+            <!-- COLUMNA DE HORAS -->
+            <div class="flex flex-col w-16 border-r border-white/10 text-gray-400 text-xs flex-shrink-0">
+                <div class="h-[90px] border-b-2 border-[#475569] bg-[#1e293b]"></div>
+                <div id="col-horas" class="flex-1"></div>
+            </div>
+            
+            <!-- COLUMNAS DE DÍAS -->
+            <div class="flex flex-1">
+                <div class="dia-columna" data-dia="0">
+                    <div class="dia-header">
+                        <span class="dia-nombre">Lunes</span>
+                        <span class="dia-fecha"></span>
+                    </div>
+                    <div class="dia-reservas"></div>
+                </div>
+                <div class="dia-columna" data-dia="1">
+                    <div class="dia-header">
+                        <span class="dia-nombre">Martes</span>
+                        <span class="dia-fecha"></span>
+                    </div>
+                    <div class="dia-reservas"></div>
+                </div>
+                <div class="dia-columna" data-dia="2">
+                    <div class="dia-header">
+                        <span class="dia-nombre">Miércoles</span>
+                        <span class="dia-fecha"></span>
+                    </div>
+                    <div class="dia-reservas"></div>
+                </div>
+                <div class="dia-columna" data-dia="3">
+                    <div class="dia-header">
+                        <span class="dia-nombre">Jueves</span>
+                        <span class="dia-fecha"></span>
+                    </div>
+                    <div class="dia-reservas"></div>
+                </div>
+                <div class="dia-columna" data-dia="4">
+                    <div class="dia-header">
+                        <span class="dia-nombre">Viernes</span>
+                        <span class="dia-fecha"></span>
+                    </div>
+                    <div class="dia-reservas"></div>
+                </div>
+                <div class="dia-columna" data-dia="5">
+                    <div class="dia-header">
+                        <span class="dia-nombre">Sábado</span>
+                        <span class="dia-fecha"></span>
+                    </div>
+                    <div class="dia-reservas"></div>
+                </div>
+            </div>
+
+        </div>
     </div>
 
 </div>
 
-<script src="{% static 'calendario/agenda_por_aula.js' %}"></script>
-
 <style>
-/* Cada hora ocupa 60px */
 .hora {
     height: 60px;
     line-height: 60px;
-    border-bottom: 1px solid #444;
-    padding-right: 20px;
+    border-bottom: 1px solid #334155;
+    padding-right: 15px;
     text-align: right;
     box-sizing: border-box;
+    font-size: 11px;
 }
 
-/* Bloques de reservas */
+.dia-columna {
+    flex: 1;
+    border-right: 1px solid #334155;
+    display: flex;
+    flex-direction: column;
+    min-width: 140px;
+}
+
+.dia-columna:last-child {
+    border-right: none;
+}
+
+.dia-header {
+    height: 90px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 2px solid #475569;
+    background: #1e293b;
+    text-align: center;
+    padding: 8px 4px;
+    flex-shrink: 0;
+}
+
+.dia-nombre {
+    font-weight: 600;
+    font-size: 13px;
+    color: #e2e8f0;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.dia-fecha {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 400;
+    display: block;
+}
+
+.dia-reservas {
+    position: relative;
+    background: #0f172a;
+    flex: 1;
+    min-height: 840px;
+}
+
 .reserva {
     position: absolute;
-    left: 10px;
-    right: 10px;
-    padding: 6px;
+    left: 3px;
+    right: 3px;
+    padding: 5px 6px;
     border-radius: 6px;
     color: white;
-    font-size: 12px;
+    font-size: 10px;
     overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+    line-height: 1.3;
+    border: 1px solid rgba(255,255,255,0.15);
 }
 
-.reserva.semestral { background-color: #3b82f6; } /* azul */
-.reserva.ocasional { background-color: #16a34a; } /* verde */
-
-.reserva.compacta {
-    font-size: 11px;
-    line-height: 1.2;
+.reserva.semestral { 
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
 }
 
-.reserva-grid {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 2px 8px;
+.reserva.ocasional { 
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
 
-.reserva-req {
-    grid-column: 1 / -1;
+.reserva-compacta .fila {
+    margin-bottom: 2px;
 }
+
+.reserva-compacta .req {
+    margin-top: 3px;
+    font-size: 8px;
+    opacity: 0.85;
+}
+
+.reserva-normal > div {
+    margin-bottom: 3px;
+}
+
+/* Ajustar cuando la sidebar está colapsada */
+.sidebar-collapsed ~ div #calendario-container {
+    /* El flex: 1 en las columnas hará que se expandan automáticamente */
+}
+
 </style>
+
+<script>
+// Observar cambios en la sidebar para ajustar el calendario
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('sidebar');
+    const calendarioContainer = document.getElementById('calendario-container');
+    
+    if (sidebar && calendarioContainer) {
+        // Usar MutationObserver para detectar cambios en las clases de la sidebar
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'class') {
+                    // Las columnas ya tienen flex: 1, así que se ajustarán automáticamente
+                    // No necesitamos hacer nada adicional
+                }
+            });
+        });
+        
+        observer.observe(sidebar, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+    }
+});
+</script>
+
+<script src="{% static 'reservas/agenda_por_aula.js' %}"></script>
+
 {% endblock %}

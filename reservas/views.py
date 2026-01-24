@@ -1,23 +1,21 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from configuracion.models import Aula, Catedra, Requerimiento
 from reservas.models import Reserva
-from datetime import date, datetime
-from django.contrib import messages
-from django.http import JsonResponse, HttpResponse
 from datetime import date, datetime, timedelta, time
-from django.db.models import Q
+from django.contrib import messages
+from django.http import JsonResponse
+from django.db.models import Q, Count
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import csrf_exempt
 
 horas = []
-for h in range(7, 22):  # ejemplo 07:00 - 22:30
+for h in range(7, 22):
     horas.append(f"{h:02d}:00")
     horas.append(f"{h:02d}:30")
 
 context = {
     "horas": horas,
-    # otros datos
 }
 
 
@@ -27,8 +25,7 @@ def nueva_reserva(request):
 
     aulas_filtradas = []
     reservas_aula = []
-
-    req_ids = []  # 👈 MUY IMPORTANTE (inicializar)
+    req_ids = []
 
     if request.method == "POST":
         docente = request.POST.get('docente')
@@ -41,21 +38,71 @@ def nueva_reserva(request):
 
         req_ids = request.POST.getlist('requerimientos')
 
-        # Filtrar aulas que tengan TODOS los requerimientos
-        aulas = Aula.objects.all()
-        for req_id in req_ids:
-            aulas = aulas.filter(requerimientos=req_id)
-
-        for aula in aulas.distinct():
-            choque = Reserva.objects.filter(
-                aula=aula,
-                fecha=fecha,
-                hora_inicio__lt=hora_fin,
-                hora_fin__gt=hora_inicio
-            ).exists()
-
-            aula.choque = choque
-            aulas_filtradas.append(aula)
+        # NUEVA LÓGICA DE FILTRADO
+        # 1. Obtener todas las aulas
+        todas_las_aulas = Aula.objects.all()
+        
+        # 2. Si hay requerimientos seleccionados, clasificar las aulas
+        if req_ids:
+            aulas_validas = []
+            
+            for aula in todas_las_aulas:
+                # Contar cuántos de los requerimientos solicitados tiene el aula
+                reqs_del_aula = set(aula.requerimientos.values_list('id', flat=True))
+                reqs_solicitados = set(int(req_id) for req_id in req_ids)
+                
+                coincidencias = len(reqs_del_aula.intersection(reqs_solicitados))
+                total_reqs_aula = len(reqs_del_aula)
+                
+                # 🔥 FILTRAR SOLO:
+                # - Aulas con TODOS los requerimientos
+                # - Aulas con ALGUNOS requerimientos (al menos 1)
+                # - Aulas SIN NINGÚN requerimiento (vacías)
+                # ❌ NO incluir aulas que tienen requerimientos pero ninguno coincide
+                
+                if coincidencias > 0 or total_reqs_aula == 0:
+                    # Verificar choque de horario
+                    choque = Reserva.objects.filter(
+                        aula=aula,
+                        fecha=fecha,
+                        hora_inicio__lt=hora_fin,
+                        hora_fin__gt=hora_inicio
+                    ).exists()
+                    
+                    aula.choque = choque
+                    aula.coincidencias = coincidencias
+                    aula.tiene_todos = coincidencias == len(reqs_solicitados)
+                    aula.tiene_algunos = coincidencias > 0 and not aula.tiene_todos
+                    aula.sin_requerimientos = total_reqs_aula == 0
+                    
+                    aulas_validas.append(aula)
+            
+            # Ordenar: primero TODOS, luego ALGUNOS, luego SIN REQUERIMIENTOS
+            aulas_filtradas = sorted(
+                aulas_validas,
+                key=lambda a: (
+                    not a.tiene_todos,           # False (tiene todos) va primero
+                    not a.tiene_algunos,         # False (tiene algunos) va segundo
+                    not a.sin_requerimientos,    # False (sin reqs) va tercero
+                    a.choque                     # Sin choque primero
+                )
+            )
+        else:
+            # Si no hay requerimientos seleccionados, mostrar todas las aulas
+            for aula in todas_las_aulas:
+                choque = Reserva.objects.filter(
+                    aula=aula,
+                    fecha=fecha,
+                    hora_inicio__lt=hora_fin,
+                    hora_fin__gt=hora_inicio
+                ).exists()
+                
+                aula.choque = choque
+                aula.coincidencias = 0
+                aula.tiene_todos = False
+                aula.tiene_algunos = False
+                aula.sin_requerimientos = aula.requerimientos.count() == 0
+                aulas_filtradas.append(aula)
 
         # Agenda preview del primer aula
         if aulas_filtradas:
@@ -70,17 +117,18 @@ def nueva_reserva(request):
         'aulas': aulas_filtradas,
         'reservas_aula': reservas_aula,
         'req_seleccionados': req_ids,
-        'horas': horas,  # 👈 ESTA LÍNEA
+        'horas': horas,
     }
 
     return render(request, 'reservas/nueva_reserva.html', context)
+
 
 def guardar_reserva(request):
     if request.method == "POST":
         aula_id = request.POST.get("aula_id")
         docente = request.POST.get("docente")
         catedra_id = request.POST.get("catedra")
-        fecha_str = request.POST.get("fecha")  # 'YYYY-MM-DD'
+        fecha_str = request.POST.get("fecha")
         hora_inicio = request.POST.get("hora_inicio")
         hora_fin = request.POST.get("hora_fin")
         tipo = request.POST.get("tipo")
@@ -90,7 +138,7 @@ def guardar_reserva(request):
         aula = get_object_or_404(Aula, id=aula_id)
         catedra = get_object_or_404(Catedra, id=catedra_id)
 
-        # Parsear fechas a date objects
+        # Parsear fechas
         try:
             fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
             if tipo == "semestral" and fin_semestre_str:
@@ -112,9 +160,9 @@ def guardar_reserva(request):
             fecha_actual = fecha
             while fecha_actual <= fin_semestre:
                 fechas_a_reservar.append(fecha_actual)
-                fecha_actual += timedelta(days=7)  # Suma 7 días (repetición semanal)
+                fecha_actual += timedelta(days=7)
 
-        # Validar choques en TODAS las fechas (seguridad)
+        # Validar choques
         choques = []
         for f in fechas_a_reservar:
             choque = Reserva.objects.filter(
@@ -124,20 +172,34 @@ def guardar_reserva(request):
                 hora_fin__gt=hora_inicio
             ).exists()
             if choque:
-                choques.append(f.strftime('%d/%m/%Y'))  # Guardar fechas con choque para mensaje
+                choques.append(f.strftime('%d/%m/%Y'))
 
         if choques:
             msg = f"El aula ya está reservada en las siguientes fechas: {', '.join(choques)}."
             messages.error(request, msg)
             return redirect("reservas:nueva_reserva")
 
-        # Si no hay choques, crear las reservas
+        # 🔥 ALIMENTAR EL AULA CON LOS REQUERIMIENTOS DE ESTA RESERVA
+        if req_ids:
+            # Obtener los requerimientos actuales del aula
+            reqs_actuales = set(aula.requerimientos.values_list('id', flat=True))
+            reqs_nuevos = set(int(req_id) for req_id in req_ids)
+            
+            # Agregar solo los que no existen (evitar duplicados)
+            reqs_a_agregar = reqs_nuevos - reqs_actuales
+            
+            if reqs_a_agregar:
+                for req_id in reqs_a_agregar:
+                    aula.requerimientos.add(req_id)
+                aula.save()
+
+        # Crear las reservas
         for f in fechas_a_reservar:
             reserva = Reserva.objects.create(
                 docente=docente,
                 catedra=catedra,
                 aula=aula,
-                fecha=f,  # ← Fecha específica para cada repetición
+                fecha=f,
                 hora_inicio=hora_inicio,
                 hora_fin=hora_fin,
                 tipo=tipo,
@@ -146,10 +208,19 @@ def guardar_reserva(request):
             reserva.requerimientos.set(req_ids)
             reserva.save()
 
-        messages.success(request, "Reserva(s) creada(s) correctamente.")
+        # Mensaje de éxito personalizado
+        total_reservas = len(fechas_a_reservar)
+        reqs_agregados = len(reqs_nuevos - reqs_actuales) if req_ids else 0
+        
+        msg = f"✅ {total_reservas} reserva(s) creada(s) correctamente."
+        if reqs_agregados > 0:
+            msg += f" Se agregaron {reqs_agregados} nuevo(s) requerimiento(s) al Aula {aula.numero}."
+        
+        messages.success(request, msg)
         return redirect("reservas:nueva_reserva")
 
     return redirect("reservas:nueva_reserva")
+
 
 def api_agenda_aula(request):
     aula_id = request.GET.get('aula')
@@ -171,6 +242,7 @@ def api_agenda_aula(request):
 
     return JsonResponse(data, safe=False)
 
+
 ORDER_MAP = {
     "docente": "docente",
     "-docente": "-docente",
@@ -184,7 +256,7 @@ ORDER_MAP = {
     "-hora_inicio": "-hora_inicio",
     "hora_fin": "hora_fin",
     "-hora_fin": "-hora_fin",
-    "tipo": "tipo",          # ← agregado para que funcione orden por tipo
+    "tipo": "tipo",
     "-tipo": "-tipo",
 }
 
@@ -209,7 +281,6 @@ def lista_reservas(request):
     order_by = ORDER_MAP.get(order, "fecha")
     reservas = reservas.order_by(order_by)
 
-    # 👇 AGREGAR ESTO: Cargar todas las cátedras y aulas para los selects
     catedras = Catedra.objects.all().order_by('nombre')
     aulas = Aula.objects.all().order_by('numero')
 
@@ -218,23 +289,21 @@ def lista_reservas(request):
         "tipo_actual": tipo,
         "order": order,
         "q": q,
-        "catedras": catedras,  # 👈 Nuevo
-        "aulas": aulas,        # 👈 Nuevo
+        "catedras": catedras,
+        "aulas": aulas,
     }
 
-    # Si es AJAX, devolver solo la tabla parcial
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return render(request, 'reservas/lista_reservas_tabla.html', context)
 
-    # Vista normal (página completa)
     return render(request, 'reservas/lista_reservas.html', context)
+
 
 @require_POST
 def update_reserva(request, id):
     reserva = get_object_or_404(Reserva, pk=id)
 
     try:
-        # Actualizar solo si el campo fue enviado
         if 'docente' in request.POST:
             reserva.docente = request.POST.get('docente').strip()
         
@@ -253,14 +322,12 @@ def update_reserva(request, id):
         if 'hora_fin' in request.POST:
             reserva.hora_fin = datetime.strptime(request.POST.get('hora_fin'), '%H:%M').time()
 
-        # Validación básica
         if reserva.hora_inicio >= reserva.hora_fin:
             return JsonResponse({
                 'success': False, 
                 'message': 'La hora de fin debe ser posterior a la hora de inicio'
             }, status=400)
 
-        # Validación de choque (excluyendo la reserva actual)
         choque = Reserva.objects.filter(
             aula=reserva.aula,
             fecha=reserva.fecha,
@@ -291,6 +358,7 @@ def update_reserva(request, id):
             'success': False,
             'message': f'Error inesperado: {str(e)}'
         }, status=500)
+
 
 @require_POST
 def delete_reservas(request):

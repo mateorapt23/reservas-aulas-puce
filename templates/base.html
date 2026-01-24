@@ -28,42 +28,240 @@
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet"/>
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <style>
+        .sidebar-collapsed {
+            width: 5rem;
+        }
+        .sidebar-expanded {
+            width: 18rem;
+        }
+        .sidebar-transition {
+            transition: width 0.3s ease-in-out;
+        }
+        .sidebar-no-transition {
+            transition: none;
+        }
+        .menu-text {
+            opacity: 1;
+            transition: opacity 0.2s ease-in-out;
+        }
+        .menu-text-hidden {
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+        }
+        .menu-text-no-transition {
+            transition: none;
+        }
+        .collapse-btn {
+            opacity: 1;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .collapse-btn-hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .collapse-btn-no-transition {
+            transition: none;
+        }
+        /* Evitar scroll horizontal */
+        body {
+            overflow-x: hidden;
+        }
+        .sidebar-collapsed .menu {
+            overflow-x: hidden;
+        }
+    </style>
 </head>
 
 <body class="bg-[#0f172a] font-sans">
 
-<div class="drawer lg:drawer-open">
-    <input id="sidebar-toggle" type="checkbox" class="drawer-toggle"/>
+<div class="flex h-screen overflow-hidden">
+    
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="
+        sidebar-expanded sidebar-transition
+        min-h-screen
+        bg-gradient-to-b from-[#0B1120] to-[#020617]
+        text-gray-300
+        shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]
+        flex flex-col
+        hidden lg:flex
+        relative
+        cursor-pointer
+    ">
 
-    <!-- CONTENIDO -->
-    <div class="drawer-content flex flex-col">
+        <!-- LOGO -->
+        <div id="logo-section" class="px-4 py-6 flex items-center gap-3 justify-between">
+            <div class="flex items-center gap-3">
+                <div class="
+                    w-11 h-11 rounded-xl flex-shrink-0
+                    bg-gradient-to-br from-indigo-500 to-indigo-600
+                    flex items-center justify-center
+                    text-white font-semibold text-lg
+                    shadow-[0_0_15px_rgba(99,102,241,0.5)]
+                ">
+                    GA
+                </div>
+                <div class="menu-text">
+                    <p class="text-lg font-semibold text-gray-100 leading-tight whitespace-nowrap">
+                        LTIC
+                    </p>
+                    <p class="text-xs text-gray-400 tracking-wide whitespace-nowrap">
+                        Gestión de Aulas
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Botón de colapsar (solo visible cuando está expandida) -->
+            <button 
+                id="toggle-sidebar"
+                class="
+                    collapse-btn
+                    w-8 h-8 rounded-lg
+                    hover:bg-white/10
+                    text-gray-400 hover:text-white
+                    flex items-center justify-center
+                    transition-all duration-200
+                    flex-shrink-0
+                "
+                onclick="event.stopPropagation()"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- MENU -->
+        <ul class="menu px-4 text-[15px] font-medium gap-1 overflow-y-auto flex-1">
+
+            <!-- RESERVAS -->
+            <li class="menu-title text-xs tracking-widest uppercase text-gray-500">
+                <span class="menu-text">Reservas</span>
+            </li>
+
+            <li>
+                <a href="/reservas/nueva/"
+                   class="hover:bg-white/5 hover:text-white rounded-xl transition-all flex items-center gap-3 justify-start"
+                   title="Nueva reserva"
+                   onclick="event.stopPropagation()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5M12 12.75h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zM12 3v8.25" />
+                    </svg>
+                    <span class="menu-text whitespace-nowrap">Nueva reserva</span>
+                </a>
+            </li>
+
+            <li>
+                <a href="{% url 'reservas:lista_reservas' %}"
+                   class="hover:bg-white/5 hover:text-white rounded-xl transition-all flex items-center gap-3 justify-start"
+                   title="Lista de reservas"
+                   onclick="event.stopPropagation()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                    <span class="menu-text whitespace-nowrap">Lista de reservas</span>
+                </a>
+            </li>
+
+            <!-- CALENDARIO -->
+            <li class="menu-title text-xs tracking-widest uppercase text-gray-500 mt-4">
+                <span class="menu-text">Calendario</span>
+            </li>
+
+            <li>
+                <a href="{% url 'calendario:agenda_por_aula' %}"
+                   class="hover:bg-white/5 hover:text-white rounded-xl transition-all flex items-center gap-3 justify-start"
+                   title="Agenda por aula"
+                   onclick="event.stopPropagation()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" />
+                    </svg>
+                    <span class="menu-text whitespace-nowrap">Agenda por aula</span>
+                </a>
+            </li>
+
+            <!-- CONFIGURACIÓN -->
+            <li class="menu-title text-xs tracking-widest uppercase text-gray-500 mt-4">
+                <span class="menu-text">Configuración</span>
+            </li>
+
+            <li>
+                <a href="{% url 'configuracion:requerimientos' %}"
+                   class="hover:bg-white/5 hover:text-white rounded-xl transition-all flex items-center gap-3 justify-start"
+                   title="Requerimientos"
+                   onclick="event.stopPropagation()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m16.5 0a3 3 0 01-3 3m-13.5 0h-1.5m16.5 0h1.5m-1.5 0h-16.5m16.5 0a3 3 0 003-3V8.25a3 3 0 00-3-3h-13.5a3 3 0 00-3 3v3m16.5 0H5.25" />
+                    </svg>
+                    <span class="menu-text whitespace-nowrap">Requerimientos</span>
+                </a>
+            </li>
+
+            <li>
+                <a href="{% url 'configuracion:catedras' %}"
+                   class="hover:bg-white/5 hover:text-white rounded-xl transition-all flex items-center gap-3 justify-start"
+                   title="Cátedras"
+                   onclick="event.stopPropagation()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                    </svg>
+                    <span class="menu-text whitespace-nowrap">Cátedras</span>
+                </a>
+            </li>
+
+            <li>
+                <a href="{% url 'configuracion:aulas' %}"
+                   class="hover:bg-white/5 hover:text-white rounded-xl transition-all flex items-center gap-3 justify-start"
+                   title="Aulas"
+                   onclick="event.stopPropagation()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5M3.75 3v18m-1.5 0h3m-3 0h18m-1.5 0h3M3.75 3h3m-3 0h18m-3 0h3M3.75 6h3m-3 0h18m-3 0h3M3.75 9h3m-3 0h18m-3 0h3M3.75 12h3m-3 0h18m-3 0h3M3.75 15h3m-3 0h18m-3 0h3M3.75 18h3m-3 0h18m-3 0h3" />
+                    </svg>
+                    <span class="menu-text whitespace-nowrap">Aulas</span>
+                </a>
+            </li>
+
+        </ul>
+
+        <!-- FOOTER -->
+        <div class="p-4 text-center text-xs text-gray-500">
+            <span class="menu-text whitespace-nowrap">Sistema LTIC · Admin</span>
+        </div>
+
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="flex-1 flex flex-col overflow-hidden">
 
         <!-- Navbar móvil -->
         <div class="lg:hidden navbar bg-[#020617] text-gray-200">
-            <label for="sidebar-toggle" class="btn btn-ghost text-xl">☰</label>
+            <button id="mobile-menu-btn" class="btn btn-ghost text-xl">☰</button>
             <span class="ml-2 font-medium tracking-wide">LTIC · Gestión de Aulas</span>
         </div>
 
         <!-- MAIN -->
-        <main class="p-8 text-gray-200 overflow-auto">
+        <main class="flex-1 p-8 text-gray-200 overflow-auto">
             {% block content %}
             {% endblock %}
         </main>
     </div>
 
-    <!-- SIDEBAR -->
-    <div class="drawer-side">
-        <label for="sidebar-toggle" class="drawer-overlay"></label>
-
+    <!-- Sidebar móvil (overlay) -->
+    <div id="mobile-sidebar" class="
+        fixed inset-0 z-40 lg:hidden hidden
+        bg-black bg-opacity-50
+    ">
         <aside class="
-            w-72 min-h-full
+            w-72 h-full
             bg-gradient-to-b from-[#0B1120] to-[#020617]
             text-gray-300
             shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]
             flex flex-col
         ">
-
-            <!-- LOGO -->
+            <!-- Contenido igual al sidebar desktop pero sin collapse -->
             <div class="px-6 py-6 flex items-center gap-3">
                 <div class="
                     w-11 h-11 rounded-xl
@@ -75,85 +273,121 @@
                     GA
                 </div>
                 <div>
-                    <p class="text-lg font-semibold text-gray-100 leading-tight">
-                        LTIC
-                    </p>
-                    <p class="text-xs text-gray-400 tracking-wide">
-                        Gestión de Aulas
-                    </p>
+                    <p class="text-lg font-semibold text-gray-100 leading-tight">LTIC</p>
+                    <p class="text-xs text-gray-400 tracking-wide">Gestión de Aulas</p>
                 </div>
             </div>
 
-            <!-- MENU -->
             <ul class="menu px-4 text-[15px] font-medium gap-1">
-
-                <!-- RESERVAS -->
-                <li class="menu-title text-xs tracking-widest uppercase text-gray-500">
-                    <span>Reservas</span>
-                </li>
-
-                <li>
-                    <a href="/reservas/nueva/"
-                       class="hover:bg-white/5 hover:text-white rounded-xl transition-all">
-                        ➕ Nueva reserva
-                    </a>
-                </li>
-
-                <li>
-                    <a href="{% url 'reservas:lista_reservas' %}"
-                       class="hover:bg-white/5 hover:text-white rounded-xl transition-all">
-                        📋 Lista de reservas
-                    </a>
-                </li>
-
-                <!-- CALENDARIO -->
-                <li class="menu-title text-xs tracking-widest uppercase text-gray-500 mt-4">
-                    <span>Calendario</span>
-                </li>
-
-                <li>
-                    <a href="{% url 'calendario:agenda_por_aula' %}"
-                       class="hover:bg-white/5 hover:text-white rounded-xl transition-all">
-                        📅 Agenda por aula
-                    </a>
-                </li>
-
-                <!-- CONFIGURACIÓN -->
-                <li class="menu-title text-xs tracking-widest uppercase text-gray-500 mt-4">
-                    <span>Configuración</span>
-                </li>
-
-                <li>
-                    <a href="{% url 'configuracion:requerimientos' %}"
-                       class="hover:bg-white/5 hover:text-white rounded-xl transition-all">
-                        🧩 Requerimientos
-                    </a>
-                </li>
-
-                <li>
-                    <a href="{% url 'configuracion:catedras' %}"
-                       class="hover:bg-white/5 hover:text-white rounded-xl transition-all">
-                        📚 Cátedras
-                    </a>
-                </li>
-
-                <li>
-                    <a href="{% url 'configuracion:aulas' %}"
-                       class="hover:bg-white/5 hover:text-white rounded-xl transition-all">
-                        🏫 Aulas
-                    </a>
-                </li>
-
+                <!-- Repetir el mismo menú aquí -->
             </ul>
-
-            <!-- FOOTER -->
-            <div class="mt-auto p-4 text-center text-xs text-gray-500">
-                Sistema LTIC · Admin
-            </div>
-
         </aside>
     </div>
+
 </div>
+
+<script>
+    // Toggle sidebar desktop
+    const sidebar = document.getElementById('sidebar');
+    const toggleBtn = document.getElementById('toggle-sidebar');
+    const menuTexts = document.querySelectorAll('.menu-text');
+    
+    let isCollapsed = false;
+
+    // Función para colapsar/expandir
+    function toggleSidebar() {
+        isCollapsed = !isCollapsed;
+        
+        if (isCollapsed) {
+            sidebar.classList.remove('sidebar-expanded');
+            sidebar.classList.add('sidebar-collapsed');
+            sidebar.style.cursor = 'pointer';
+            menuTexts.forEach(text => {
+                text.classList.add('menu-text-hidden');
+            });
+            toggleBtn.classList.add('collapse-btn-hidden');
+            // Guardar estado en localStorage
+            localStorage.setItem('sidebarCollapsed', 'true');
+        } else {
+            sidebar.classList.remove('sidebar-collapsed');
+            sidebar.classList.add('sidebar-expanded');
+            sidebar.style.cursor = 'default';
+            menuTexts.forEach(text => {
+                text.classList.remove('menu-text-hidden');
+            });
+            toggleBtn.classList.remove('collapse-btn-hidden');
+            // Guardar estado en localStorage
+            localStorage.setItem('sidebarCollapsed', 'false');
+        }
+    }
+
+    // Restaurar estado al cargar la página SIN ANIMACIÓN
+    function restoreSidebarState() {
+        const savedState = localStorage.getItem('sidebarCollapsed');
+        if (savedState === 'true') {
+            // Desactivar transiciones temporalmente
+            sidebar.classList.add('sidebar-no-transition');
+            menuTexts.forEach(text => {
+                text.classList.add('menu-text-no-transition');
+            });
+            toggleBtn.classList.add('collapse-btn-no-transition');
+            
+            // Aplicar estado colapsado
+            isCollapsed = true;
+            sidebar.classList.remove('sidebar-expanded');
+            sidebar.classList.add('sidebar-collapsed');
+            sidebar.style.cursor = 'pointer';
+            menuTexts.forEach(text => {
+                text.classList.add('menu-text-hidden');
+            });
+            toggleBtn.classList.add('collapse-btn-hidden');
+            
+            // Reactivar transiciones después de un momento
+            setTimeout(() => {
+                sidebar.classList.remove('sidebar-no-transition');
+                menuTexts.forEach(text => {
+                    text.classList.remove('menu-text-no-transition');
+                });
+                toggleBtn.classList.remove('collapse-btn-no-transition');
+            }, 50);
+        }
+    }
+
+    // Restaurar estado al cargar
+    restoreSidebarState();
+
+    // Click en el botón de colapsar
+    toggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleSidebar();
+    });
+
+    // Click en la sidebar cuando está colapsada
+    sidebar.addEventListener('click', (e) => {
+        if (isCollapsed) {
+            // Solo expandir si no se hizo click en un link
+            if (!e.target.closest('a')) {
+                toggleSidebar();
+            }
+        }
+    });
+
+    // Toggle sidebar móvil
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileSidebar = document.getElementById('mobile-sidebar');
+    
+    if (mobileMenuBtn && mobileSidebar) {
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileSidebar.classList.toggle('hidden');
+        });
+        
+        mobileSidebar.addEventListener('click', (e) => {
+            if (e.target === mobileSidebar) {
+                mobileSidebar.classList.add('hidden');
+            }
+        });
+    }
+</script>
 
 </body>
 </html>

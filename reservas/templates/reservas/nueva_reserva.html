@@ -27,7 +27,7 @@
             </div>
 
             <!-- FORM -->
-            <div class="bg-[#020617] rounded-2xl shadow-lg px-4 sm:px-6 lg:px-10 py-8 max-w-7xl mx-auto">  <!-- Más ancho + padding lateral adaptativo -->
+            <div class="bg-[#020617] rounded-2xl shadow-lg px-4 sm:px-6 lg:px-10 py-8 max-w-7xl mx-auto">
 
                 <form method="POST" class="space-y-4" action="#resultados">
                     {% csrf_token %}
@@ -44,7 +44,7 @@
                                 required
                                 value="{{ request.POST.docente }}"
                                 placeholder="Ej. Diana Molina"
-                                class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white text-base"/>  <!-- quitado input-sm -->
+                                class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white text-base"/>
                         </div>
 
                         <!-- CÁTEDRA -->
@@ -208,7 +208,7 @@
                             </div>
                         </div>
 
-                        <!-- FIN DE SEMESTRE (manteniendo exactamente lo que pediste) -->
+                        <!-- FIN DE SEMESTRE -->
                         <div id="fin-semestre-wrapper"
                             class="{% if request.POST.tipo != 'semestral' %}opacity-60{% endif %}">
                             <label class="label pb-1">
@@ -263,9 +263,20 @@
 
                         <!-- INFO -->
                         <div class="space-y-2">
-                            <h3 class="text-lg font-semibold text-white">
-                                Aula {{ aula.numero }}
-                            </h3>
+                            <div class="flex items-center gap-3">
+                                <h3 class="text-lg font-semibold text-white">
+                                    Aula {{ aula.numero }}
+                                </h3>
+                                
+                                <!-- BADGES DE COINCIDENCIA -->
+                                {% if aula.tiene_todos %}
+                                    <span class="badge badge-success badge-sm">✓ Todos los requerimientos</span>
+                                {% elif aula.tiene_algunos %}
+                                    <span class="badge badge-info badge-sm">🔵 Algunos requerimientos ({{ aula.coincidencias }}/{{ req_seleccionados|length }})</span>
+                                {% elif aula.sin_requerimientos %}
+                                    <span class="badge badge-warning badge-sm">⚡ Disponible para alimentarse</span>
+                                {% endif %}
+                            </div>
 
                             <p class="text-sm text-gray-400">
                                 Capacidad:
@@ -275,15 +286,19 @@
                             <p class="text-sm text-gray-400">
                                 Software instalado:
                                 <span class="text-gray-200">
-                                    {% for r in aula.requerimientos.all %}
-                                        {{ r.nombre }}{% if not forloop.last %}, {% endif %}
-                                    {% endfor %}
+                                    {% if aula.requerimientos.all %}
+                                        {% for r in aula.requerimientos.all %}
+                                            {{ r.nombre }}{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="text-yellow-400/80">Sin requerimientos actuales</span>
+                                    {% endif %}
                                 </span>
                             </p>
 
                             {% if aula.choque %}
                                 <span class="inline-flex items-center gap-2 text-sm text-red-400 mt-2">
-                                    ❌ Choque de horario ({{ request.POST.hora_inicio }} – {{ request.POST.hora_fin }})
+                                    ❌ Choque de horario ({{ request.POST.hora_inicio }} — {{ request.POST.hora_fin }})
                                 </span>
                             {% else %}
                                 <span class="inline-flex items-center gap-2 text-sm text-green-400 mt-2">
@@ -388,7 +403,7 @@
         margin-top: 6px;
         padding: 12px;
         box-shadow: 0 10px 25px -5px rgba(0,0,0,0.6);
-        display: none;           /* importante: usamos display en JS */
+        display: none;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
     }
@@ -413,7 +428,7 @@
     }
 
     .time-option:active {
-        background: rgba(59, 130, 246, 0.2); /* azul suave al click */
+        background: rgba(59, 130, 246, 0.2);
     }
 </style>
 
