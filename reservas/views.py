@@ -371,3 +371,4 @@ def delete_reservas(request):
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
+

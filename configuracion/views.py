@@ -37,19 +37,25 @@ def crear_requerimiento(request):
 
 def editar_requerimiento(request, id):
     if request.method == "POST":
-        requerimiento = get_object_or_404(Requerimiento, id=id)
-        nombre = request.POST.get("nombre")
-        if nombre:
-            requerimiento.nombre = nombre
-            requerimiento.save()
-    return HttpResponse(status=200)
-
+        try:
+            requerimiento = get_object_or_404(Requerimiento, id=id)
+            nombre = request.POST.get("nombre")
+            if nombre:
+                requerimiento.nombre = nombre
+                requerimiento.save()
+                return JsonResponse({'success': True})
+            return JsonResponse({'success': False, 'message': 'Nombre vacío'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
 
 def eliminar_requerimiento(request, id):
     if request.method == "POST":
-        requerimiento = get_object_or_404(Requerimiento, id=id)
-        requerimiento.delete()
-    return HttpResponse(status=200)
+        try:
+            requerimiento = get_object_or_404(Requerimiento, id=id)
+            requerimiento.delete()
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
 
 def catedras(request):
     q = request.GET.get("q", "")
@@ -84,19 +90,26 @@ def crear_catedra(request):
 
 def editar_catedra(request, id):
     if request.method == "POST":
-        catedra = get_object_or_404(Catedra, id=id)
-        nombre = request.POST.get("nombre")
-        if nombre:
-            catedra.nombre = nombre
-            catedra.save()
-    return HttpResponse(status=200)
-
+        try:
+            catedra = get_object_or_404(Catedra, id=id)
+            nombre = request.POST.get("nombre")
+            if nombre:
+                catedra.nombre = nombre
+                catedra.save()
+                return JsonResponse({'success': True})
+            return JsonResponse({'success': False, 'message': 'Nombre vacío'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
 
 def eliminar_catedra(request, id):
     if request.method == "POST":
-        catedra = get_object_or_404(Catedra, id=id)
-        catedra.delete()
-    return HttpResponse(status=200)
+        try:
+            catedra = get_object_or_404(Catedra, id=id)
+            catedra.delete()
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+
 
 
 def aulas(request):
@@ -141,17 +154,50 @@ def editar_aula(request, id):
     aula = get_object_or_404(Aula, id=id)
 
     if request.method == "POST":
-        aula.numero = request.POST.get("numero")
-        aula.capacidad = request.POST.get("capacidad")
-        requerimientos = request.POST.getlist("requerimientos[]")
+        try:
+            aula.numero = request.POST.get("numero")
+            aula.capacidad = request.POST.get("capacidad")
+            requerimientos = request.POST.getlist("requerimientos[]")
 
-        aula.save()
-        aula.requerimientos.set(requerimientos)
-
-    return HttpResponse(status=200)
+            aula.save()
+            aula.requerimientos.set(requerimientos)
+            
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
 
 def eliminar_aula(request, id):
-    aula = get_object_or_404(Aula, id=id)
     if request.method == "POST":
-        aula.delete()
-    return HttpResponse(status=200)
+        try:
+            aula = get_object_or_404(Aula, id=id)
+            aula.delete()
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+
+@require_POST
+def eliminar_requerimientos_masivo(request):
+    ids = request.POST.getlist('ids[]')
+    try:
+        Requerimiento.objects.filter(id__in=ids).delete()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+@require_POST
+def eliminar_catedras_masivo(request):
+    ids = request.POST.getlist('ids[]')
+    try:
+        Catedra.objects.filter(id__in=ids).delete()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+@require_POST
+def eliminar_aulas_masivo(request):
+    ids = request.POST.getlist('ids[]')
+    try:
+        Aula.objects.filter(id__in=ids).delete()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})

@@ -54,13 +54,16 @@
                             </label>
 
                             <!-- INPUT BUSCADOR -->
-                            <input
-                                type="text"
-                                id="buscador-catedra"
-                                placeholder="Buscar cátedra..."
-                                autocomplete="off"
-                                class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white"
-                            />
+                            <div class="relative">
+                                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10"></i>
+                                <input
+                                    type="text"
+                                    id="buscador-catedra"
+                                    placeholder="Buscar cátedra..."
+                                    autocomplete="off"
+                                    class="input input-bordered w-full pl-10 bg-[#0f172a] border-white/10 text-white"
+                                />
+                            </div>
 
                             <!-- INPUT REAL (DJANGO) -->
                             <input
@@ -98,12 +101,15 @@
                         </label>
 
                         <!-- BUSCADOR -->
-                        <input
-                            type="text"
-                            id="buscador-requerimientos"
-                            placeholder="Buscar requerimiento..."
-                            class="input input-bordered input-sm w-full bg-[#0f172a] border-white/10 text-white mb-3"
-                        />
+                        <div class="relative mb-3">
+                            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input
+                                type="text"
+                                id="buscador-requerimientos"
+                                placeholder="Buscar requerimiento..."
+                                class="input input-bordered input-sm w-full pl-10 bg-[#0f172a] border-white/10 text-white"
+                            />
+                        </div>
 
                         <!-- LISTA CON SCROLL -->
                         <div
@@ -231,8 +237,9 @@
                     <!-- BOTÓN -->
                     <div class="pt-4">
                         <button type="submit"
-                                class="btn btn-primary w-full text-base py-3">
-                            🔍 Ver aulas disponibles
+                                class="btn btn-primary w-full text-base py-3 gap-2">
+                            <i data-lucide="search" class="w-5 h-5"></i>
+                            Ver aulas disponibles
                         </button>
                     </div>
 
@@ -385,6 +392,15 @@
     </div>
 
 </div>
+
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    // Inicializar iconos después de cargar
+    document.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+    });
+</script>
 
 <script src="{% static 'reservas/nueva_reserva.js' %}"></script>
 <style>

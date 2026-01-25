@@ -4,7 +4,7 @@
 {% block content %}
 <div class="p-6 max-w-7xl mx-auto">
 
-    <h1 class="text-2xl font-bold text-white mb-4"> Lista de Reservas</h1>
+    <h1 class="text-2xl font-bold text-white mb-4">Lista de Reservas</h1>
 
     <!-- Pestañas -->
     <div class="tabs tabs-boxed mb-6">
@@ -16,9 +16,12 @@
     <!-- Buscador -->
     <form method="get" id="form-busqueda" class="mb-4 flex items-center gap-4">
         <input type="hidden" name="tipo" value="{{ tipo_actual }}">
-        <input type="text" id="buscador" name="q" value="{{ q }}"
-               placeholder="Buscar docente, cátedra o aula"
-               class="input input-sm w-full max-w-md bg-[#0f172a] border-white/10 text-white">
+        <div class="relative w-full max-w-md">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input type="text" id="buscador" name="q" value="{{ q }}"
+                   placeholder="Buscar docente, cátedra o aula"
+                   class="input input-sm w-full pl-10 bg-[#0f172a] border-white/10 text-white">
+        </div>
         
         <button id="btn-eliminar-seleccionadas" class="btn btn-error btn-sm" type="button" disabled>
             Eliminar seleccionadas
@@ -33,6 +36,16 @@
     <div id="global-time-picker" class="time-picker hidden fixed z-[10000]"></div>
 
 </div>
+
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    // Inicializar iconos después de cargar
+    document.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+    });
+</script>
+
 <script>
     window.APP_URLS = {
         updateReserva: function(id) {

@@ -22,5 +22,6 @@ urlpatterns = [
     path('update/<int:id>/', update_reserva, name='update_reserva'),
     path('delete/', delete_reservas, name='delete_reservas'),
     
+    
    
 ]

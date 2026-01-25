@@ -3,39 +3,63 @@
         <tr>
             <th class="w-10"><input type="checkbox" id="select-all"></th>
             <th>
-                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'docente' %}-{% endif %}docente" class="order-link">
+                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'docente' %}-{% endif %}docente" class="order-link flex items-center gap-1">
                     Docente
-                    {% if order == 'docente' %}↑{% elif order == '-docente' %}↓{% endif %}
+                    {% if order == 'docente' %}
+                        <i data-lucide="arrow-up" class="w-3 h-3"></i>
+                    {% elif order == '-docente' %}
+                        <i data-lucide="arrow-down" class="w-3 h-3"></i>
+                    {% endif %}
                 </a>
             </th>
             <th>
-                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'catedra' %}-{% endif %}catedra" class="order-link">
+                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'catedra' %}-{% endif %}catedra" class="order-link flex items-center gap-1">
                     Cátedra
-                    {% if order == 'catedra' %}↑{% elif order == '-catedra' %}↓{% endif %}
+                    {% if order == 'catedra' %}
+                        <i data-lucide="arrow-up" class="w-3 h-3"></i>
+                    {% elif order == '-catedra' %}
+                        <i data-lucide="arrow-down" class="w-3 h-3"></i>
+                    {% endif %}
                 </a>
             </th>
             <th>
-                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'aula' %}-{% endif %}aula" class="order-link">
+                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'aula' %}-{% endif %}aula" class="order-link flex items-center gap-1">
                     Aula
-                    {% if order == 'aula' %}↑{% elif order == '-aula' %}↓{% endif %}
+                    {% if order == 'aula' %}
+                        <i data-lucide="arrow-up" class="w-3 h-3"></i>
+                    {% elif order == '-aula' %}
+                        <i data-lucide="arrow-down" class="w-3 h-3"></i>
+                    {% endif %}
                 </a>
             </th>
             <th>
-                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'fecha' %}-{% endif %}fecha" class="order-link">
+                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'fecha' %}-{% endif %}fecha" class="order-link flex items-center gap-1">
                     Fecha
-                    {% if order == 'fecha' %}↑{% elif order == '-fecha' %}↓{% endif %}
+                    {% if order == 'fecha' %}
+                        <i data-lucide="arrow-up" class="w-3 h-3"></i>
+                    {% elif order == '-fecha' %}
+                        <i data-lucide="arrow-down" class="w-3 h-3"></i>
+                    {% endif %}
                 </a>
             </th>
             <th>
-                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'hora_inicio' %}-{% endif %}hora_inicio" class="order-link">
+                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'hora_inicio' %}-{% endif %}hora_inicio" class="order-link flex items-center gap-1">
                     Hora inicio
-                    {% if order == 'hora_inicio' %}↑{% elif order == '-hora_inicio' %}↓{% endif %}
+                    {% if order == 'hora_inicio' %}
+                        <i data-lucide="arrow-up" class="w-3 h-3"></i>
+                    {% elif order == '-hora_inicio' %}
+                        <i data-lucide="arrow-down" class="w-3 h-3"></i>
+                    {% endif %}
                 </a>
             </th>
             <th>
-                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'hora_fin' %}-{% endif %}hora_fin" class="order-link">
+                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'hora_fin' %}-{% endif %}hora_fin" class="order-link flex items-center gap-1">
                     Hora fin
-                    {% if order == 'hora_fin' %}↑{% elif order == '-hora_fin' %}↓{% endif %}
+                    {% if order == 'hora_fin' %}
+                        <i data-lucide="arrow-up" class="w-3 h-3"></i>
+                    {% elif order == '-hora_fin' %}
+                        <i data-lucide="arrow-down" class="w-3 h-3"></i>
+                    {% endif %}
                 </a>
             </th>
             <th>Tipo</th>
@@ -58,19 +82,23 @@
             <td data-field="tipo">
                 {% if r.tipo == 'ocasional' %}
                     <span class="badge badge-success badge-sm gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-3 h-3 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <i data-lucide="check-circle" class="w-3 h-3"></i>
                         Ocasional
                     </span>
                 {% else %}
                     <span class="badge badge-info badge-sm gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-3 h-3 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <i data-lucide="calendar" class="w-3 h-3"></i>
                         Semestral
                     </span>
                 {% endif %}
             </td>
             <td class="flex gap-2">
-                <button class="btn-editar btn btn-xs btn-outline" title="Editar">✏️</button>
-                <button class="btn-eliminar btn btn-xs btn-error btn-outline" title="Eliminar">🗑️</button>
+                <button class="btn-editar btn btn-xs btn-outline hover:bg-blue-500/10 hover:border-blue-500 hover:text-blue-400 transition-all" title="Editar">
+                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                </button>
+                <button class="btn-eliminar btn btn-xs btn-error btn-outline hover:bg-red-500/10 transition-all" title="Eliminar">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
             </td>
         </tr>
         {% empty %}

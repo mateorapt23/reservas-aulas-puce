@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const tablaContainer = document.getElementById('tabla-container');
     const btnEliminarSeleccionadas = document.getElementById('btn-eliminar-seleccionadas');
     let editingRow = null;
+    let seleccionados = new Set(); // 👈 CRÍTICO: Mantener selección entre búsquedas
 
     // Recargar tabla manteniendo filtros actuales
     function recargarTabla() {
@@ -18,12 +19,62 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .then(html => {
             tablaContainer.innerHTML = html;
+            restaurarSeleccion(); // 👈 Restaurar checkboxes marcados
             initAllEvents();
+            updateBotonEliminar(); // 👈 Actualizar contador
+            
+            // Re-inicializar iconos
+            lucide.createIcons();
         })
         .catch(err => {
             console.error('Error recargando tabla:', err);
             tablaContainer.innerHTML = '<p class="text-red-500 text-center py-6">Error al cargar las reservas</p>';
         });
+    }
+
+    // 👇 FUNCIONES PARA MANTENER SELECCIÓN ENTRE BÚSQUEDAS
+    function guardarSeleccion() {
+        // NO limpiar el Set, solo actualizar basado en los checkboxes VISIBLES
+        document.querySelectorAll('.select-row').forEach(cb => {
+            const id = cb.closest('tr').dataset.id;
+            if (cb.checked) {
+                seleccionados.add(id); // Agregar si está marcado
+            } else {
+                seleccionados.delete(id); // Quitar si está desmarcado
+            }
+        });
+    }
+
+    function restaurarSeleccion() {
+        document.querySelectorAll('.select-row').forEach(cb => {
+            const id = cb.closest('tr').dataset.id;
+            if (seleccionados.has(id)) {
+                cb.checked = true;
+            }
+        });
+        actualizarSelectAll();
+    }
+
+    function actualizarSelectAll() {
+        const selectAll = document.getElementById('select-all');
+        if (!selectAll) return;
+        
+        const checkboxes = document.querySelectorAll('.select-row');
+        const checkedBoxes = document.querySelectorAll('.select-row:checked');
+        
+        if (checkboxes.length === 0) {
+            selectAll.checked = false;
+            selectAll.indeterminate = false;
+        } else if (checkedBoxes.length === checkboxes.length) {
+            selectAll.checked = true;
+            selectAll.indeterminate = false;
+        } else if (checkedBoxes.length > 0) {
+            selectAll.checked = false;
+            selectAll.indeterminate = true;
+        } else {
+            selectAll.checked = false;
+            selectAll.indeterminate = false;
+        }
     }
 
     // Inicializar todos los eventos después de cada carga
@@ -41,12 +92,18 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.order-link').forEach(link => {
             link.addEventListener('click', e => {
                 e.preventDefault();
+                guardarSeleccion(); // 👈 Guardar ANTES de ordenar
                 const url = link.href;
                 fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                     .then(r => r.text())
                     .then(html => {
                         tablaContainer.innerHTML = html;
+                        restaurarSeleccion(); // 👈 Restaurar DESPUÉS
                         initAllEvents();
+                        updateBotonEliminar();
+                        
+                        // Re-inicializar iconos
+                        lucide.createIcons();
                     })
                     .catch(err => console.error(err));
             });
@@ -61,6 +118,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let timeout;
         buscador.addEventListener('input', () => {
             clearTimeout(timeout);
+            guardarSeleccion(); // 👈 Guardar INMEDIATAMENTE antes de que desaparezcan los checkboxes
             timeout = setTimeout(() => {
                 const params = new URLSearchParams(window.location.search);
                 params.set('q', buscador.value.trim());
@@ -70,7 +128,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     .then(r => r.text())
                     .then(html => {
                         tablaContainer.innerHTML = html;
+                        restaurarSeleccion(); // 👈 Restaurar DESPUÉS
                         initAllEvents();
+                        updateBotonEliminar();
+                        
+                        // Re-inicializar iconos
+                        lucide.createIcons();
                     });
             }, 350);
         });
@@ -84,13 +147,15 @@ document.addEventListener('DOMContentLoaded', function () {
         if (selectAll) {
             selectAll.addEventListener('change', () => {
                 checkboxes.forEach(cb => cb.checked = selectAll.checked);
+                guardarSeleccion(); // 👈 Guardar después de cambiar
                 updateBotonEliminar();
             });
         }
 
         checkboxes.forEach(cb => {
             cb.addEventListener('change', () => {
-                if (!cb.checked) selectAll.checked = false;
+                guardarSeleccion(); // 👈 Guardar en cada cambio
+                actualizarSelectAll();
                 updateBotonEliminar();
             });
         });
@@ -101,14 +166,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function updateBotonEliminar() {
-        const checkedCount = document.querySelectorAll('.select-row:checked').length;
+        const checkedCount = seleccionados.size; // 👈 Contar desde el Set, no del DOM
         btnEliminarSeleccionadas.disabled = checkedCount === 0;
         btnEliminarSeleccionadas.textContent = checkedCount > 0 ? `Eliminar (${checkedCount})` : 'Eliminar seleccionadas';
     }
 
     function eliminarSeleccionadas() {
-        const ids = Array.from(document.querySelectorAll('.select-row:checked'))
-                        .map(cb => cb.closest('tr').dataset.id);
+        const ids = Array.from(seleccionados); // 👈 Usar el Set directamente
 
         if (ids.length === 0) return;
         if (!confirm(`¿Eliminar ${ids.length} reserva(s)?`)) return;
@@ -126,6 +190,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(r => r.json())
         .then(data => {
             if (data.success) {
+                seleccionados.clear(); // 👈 Limpiar selección después de eliminar
                 recargarTabla();
             } else {
                 alert(data.message || 'Error al eliminar reservas');
@@ -147,7 +212,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     cancelarEdicion(editingRow);
                 }
 
-                if (document.querySelectorAll('.select-row:checked').length > 1) {
+                // 👇 Verificar si hay múltiples seleccionados (usando el Set)
+                if (seleccionados.size > 1) {
                     alert('No puedes editar mientras tienes varias filas seleccionadas.');
                     return;
                 }
@@ -166,39 +232,48 @@ document.addEventListener('DOMContentLoaded', function () {
             let html = '';
 
             if (field === 'fecha') {
-                html = `<input type="date" value="${value}" class="input input-xs bg-base-300 w-full">`;
+                html = `<input type="date" value="${value}" class="input input-xs w-full" style="background-color: #1a1a1a !important; color: white !important;">`;
             } else if (field === 'hora_inicio' || field === 'hora_fin') {
-                html = `<input type="text" value="${value}" readonly class="input input-xs bg-base-300 w-full cursor-pointer time-input-edit">`;
+                html = `<input type="text" value="${value}" readonly class="input input-xs w-full cursor-pointer time-input-edit" style="background-color: #1a1a1a !important; color: white !important;">`;
      
             } else if (field === 'catedra') {
                 let opts = window.APP_DATA.catedras.map(c => 
                     `<option value="${c.id}" ${c.id == td.dataset.id ? 'selected' : ''}>${c.nombre}</option>`
                 ).join('');
-                html = `<select class="select select-xs bg-base-300 w-full">${opts}</select>`;
+                html = `<select class="select select-xs w-full" style="background-color: #1a1a1a !important; color: white !important;">${opts}</select>`;
             } else if (field === 'aula') {
                 let opts = window.APP_DATA.aulas.map(a => 
                     `<option value="${a.id}" ${a.id == td.dataset.id ? 'selected' : ''}>Aula ${a.numero}</option>`
                 ).join('');
-                html = `<select class="select select-xs bg-base-300 w-full">${opts}</select>`;
+                html = `<select class="select select-xs w-full" style="background-color: #1a1a1a !important; color: white !important;">${opts}</select>`;
             } else {
-                html = `<input type="text" value="${value}" class="input input-xs bg-base-300 w-full">`;
+                html = `<input type="text" value="${value}" class="input input-xs w-full" style="background-color: #1a1a1a !important; color: white !important;">`;
             }
             td.innerHTML = html;
         });
 
         const acciones = tr.lastElementChild;
         acciones.innerHTML = `
-            <button class="btn-guardar btn btn-xs btn-success btn-outline">Guardar</button>
-            <button class="btn-cancelar btn btn-xs btn-warning btn-outline">Cancelar</button>
+            <button class="btn-guardar btn btn-xs btn-success btn-outline gap-1 hover:bg-green-500/10 transition-all">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                Guardar
+            </button>
+            <button class="btn-cancelar btn btn-xs btn-warning btn-outline gap-1 hover:bg-yellow-500/10 transition-all">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                Cancelar
+            </button>
         `;
+
+        // Re-inicializar iconos
+        lucide.createIcons();
 
         acciones.querySelector('.btn-guardar').onclick = () => guardarFila(tr);
         acciones.querySelector('.btn-cancelar').onclick = () => cancelarEdicion(tr);
     }
 
-    // ──────────────────────────────
+    // ────────────────────────────────────
     // Time Picker Global (fixed, sin scroll)
-    // ──────────────────────────────
+    // ────────────────────────────────────
     let pickerInputActivo = null;
 
     function initGlobalTimePicker() {
@@ -309,64 +384,16 @@ document.addEventListener('DOMContentLoaded', function () {
             body: formData,
             headers: { 'X-CSRFToken': window.CSRF_TOKEN || getCsrfToken() }
         })
-        .then(r => {
-            if (!r.ok) {
-                // Lee el JSON de error en respuestas como 400
-                return r.json().then(errData => {
-                    throw errData;  // Lanza el objeto JSON para procesarlo en el siguiente then
-                });
-            }
-            return r.json();
-        })
-        .then(data => {
-            if (data.success) {
-                recargarTabla();
-            } else {
-                // Muestra el message del servidor (ej: "Choque de horario...")
-                alert(data.message || 'Error al guardar los cambios');
-                cancelarEdicion(tr);
-            }
-        })
-        .catch(err => {
-            // Solo para errores reales (red/conexión), no para 400
-            console.error('Error completo:', err);
-            alert(err.message || 'Error inesperado al guardar');
-            cancelarEdicion(tr);
-        });
-    }
-
-    function cancelarEdicion(tr) {
-        editingRow = null;
-        recargarTabla();
-    }
-
-    function guardarFila(tr) {
-        const id = tr.dataset.id;
-        const formData = new FormData();
-
-        tr.querySelectorAll('.editable').forEach(td => {
-            const field = td.dataset.field;
-            const input = td.querySelector('input, select');
-            formData.append(field, input ? input.value.trim() : '');
-        });
-
-        fetch(window.APP_URLS.updateReserva(id), {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-CSRFToken': window.CSRF_TOKEN || getCsrfToken() }
-        })
-        .then(r => r.json().then(data => ({ok: r.ok, data})))  // Lee JSON siempre, guarda si fue ok o no
+        .then(r => r.json().then(data => ({ok: r.ok, data})))
         .then(({ok, data}) => {
             if (ok && data.success) {
                 recargarTabla();
             } else {
-                // Muestra el message real del servidor
                 alert(data.message || 'Error al guardar los cambios');
                 cancelarEdicion(tr);
             }
         })
         .catch(err => {
-            // Solo para errores de red/JSON inválido
             console.error('Error completo:', err);
             alert('Error inesperado al guardar: ' + (err.message || 'desconocido'));
             cancelarEdicion(tr);
@@ -375,6 +402,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function cancelarEdicion(tr) {
         editingRow = null;
+        guardarSeleccion(); // 👈 Guardar antes de recargar
         recargarTabla();
     }
 
@@ -398,6 +426,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
+                        seleccionados.delete(id); // 👈 Quitar de seleccionados
                         recargarTabla();
                     } else {
                         alert(data.message || 'Error al eliminar');
@@ -421,117 +450,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         return '';
     }
-    function initTimePickersGlobal() {
-    const picker = document.getElementById('global-time-picker');
-    if (!picker) return;
-
-    // Crear el contenido del picker solo una vez
-    if (!picker.dataset.initialized) {
-        crearContenidoTimePicker(picker);
-        picker.dataset.initialized = 'true';
-    }
-
-    // Listener en delegación (porque la tabla se recarga)
-    document.addEventListener('focus', e => {
-        const input = e.target;
-        if (!input.matches('.time-input-edit')) return;
-
-        posicionarPickerDebajoDe(input, picker);
-        abrirPicker(input, picker);
-    }, true);
-
-    // Cerrar al clic fuera
-    document.addEventListener('click', e => {
-        if (picker.classList.contains('hidden')) return;
-        if (!picker.contains(e.target) && !e.target.matches('.time-input-edit')) {
-            picker.classList.add('hidden');
-            picker.style.display = 'none';
-        }
-    }, true);
-}
-
-function crearContenidoTimePicker(picker) {
-    picker.innerHTML = `
-        <div class="time-column" id="global-horas"></div>
-        <div class="time-column" id="global-minutos"></div>
-    `;
-
-    const colHoras = picker.querySelector('#global-horas');
-    const colMinutos = picker.querySelector('#global-minutos');
-
-    const horas = [];
-    for (let h = 7; h <= 21; h++) horas.push(h.toString().padStart(2, '0'));
-
-    horas.forEach(h => {
-        const div = document.createElement('div');
-        div.className = 'time-option';
-        div.textContent = h;
-        div.onclick = () => seleccionarHora(h, picker);
-        colHoras.appendChild(div);
-    });
-
-    ['00', '30'].forEach(m => {
-        const div = document.createElement('div');
-        div.className = 'time-option';
-        div.textContent = m;
-        div.onclick = () => seleccionarMinuto(m, picker);
-        colMinutos.appendChild(div);
-    });
-}
-
-let inputActual = null;
-
-function seleccionarHora(h, picker) {
-    if (!inputActual) return;
-    inputActual.dataset.hora = h;
-    intentarCompletar(inputActual, picker);
-}
-
-function seleccionarMinuto(m, picker) {
-    if (!inputActual) return;
-    inputActual.dataset.minuto = m;
-    intentarCompletar(inputActual, picker);
-}
-
-function intentarCompletar(input, picker) {
-    const h = input.dataset.hora;
-    const m = input.dataset.minuto;
-    if (h && m) {
-        input.value = `${h}:${m}`;
-        picker.classList.add('hidden');
-        picker.style.display = 'none';
-        input.blur();
-        input.dataset.hora = '';
-        input.dataset.minuto = '';
-        inputActual = null;
-    }
-}
-
-function posicionarPickerDebajoDe(input, picker) {
-    const rect = input.getBoundingClientRect();
-    picker.style.top = (rect.bottom + window.scrollY + 4) + 'px';
-    picker.style.left = (rect.left + window.scrollX) + 'px';
-    picker.style.width = rect.width + 'px';
-}
-
-    function abrirPicker(input, picker) {
-        inputActual = input;
-        // Limpiar selección anterior si existe
-        picker.querySelectorAll('.time-option.selected')?.forEach(el => el.classList.remove('selected'));
-
-        // Opcional: pre-seleccionar si hay valor
-        const [hora, minuto] = input.value.split(':');
-        if (hora && minuto) {
-            const optHora = picker.querySelector(`.time-column:first-child .time-option[data-value="${hora}"]`);
-            const optMin = picker.querySelector(`.time-column:last-child .time-option[data-value="${minuto}"]`);
-            if (optHora) optHora.classList.add('selected');
-            if (optMin) optMin.classList.add('selected');
-        }
-
-        picker.classList.remove('hidden');
-        picker.style.display = 'grid';
-    }
 
     // Iniciar
     initAllEvents();
+    updateBotonEliminar(); // 👈 Inicializar el botón al cargar
 });

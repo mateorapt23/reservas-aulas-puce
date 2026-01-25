@@ -1,8 +1,9 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Requerimientos{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto">
+<div class="max-w-6xl mx-auto p-6">
 
     <!-- TÍTULO -->
     <div class="mb-8">
@@ -15,13 +16,28 @@
     <!-- BARRA SUPERIOR -->
     <form method="get" class="flex flex-col sm:flex-row gap-4 items-center justify-between mb-6">
         {% csrf_token %}
+
         <!-- BUSCADOR -->
-        <input type="text"
-               name="q"
-               value="{{ q }}"
-               placeholder="🔍 Buscar requerimiento..."
-               class="input input-bordered w-full sm:max-w-sm
-                      bg-[#0f172a] border-white/10 text-white"/>
+        <div class="flex gap-5 items-center flex-1">
+            <div class="relative w-full sm:max-w-sm flex-shrink-0">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <input type="text"
+                    name="q"
+                    id="buscador"
+                    value="{{ q }}"
+                    placeholder="Buscar requerimiento..."
+                    class="input input-bordered w-full pl-10
+                            bg-[#0f172a] border-white/10 text-white"/>
+            </div>
+            
+            <!-- ELIMINAR SELECCIONADOS -->
+            <button type="button"
+                    id="btn-eliminar-seleccionados"
+                    class="btn btn-error btn-sm whitespace-nowrap"
+                    disabled>
+                Eliminar seleccionados
+            </button>
+        </div>
 
         <div class="flex items-center gap-3">
 
@@ -29,20 +45,22 @@
             <div id="agregar-wrapper" class="flex items-center gap-2">
                 <button type="button"
                         id="btn-agregar"
-                        class="btn btn-primary btn-sm">
-                    ➕ Agregar
+                        class="btn btn-primary btn-sm gap-2">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    Agregar
                 </button>
             </div>
 
             <!-- ORDEN -->
             <select name="order"
-                    class="select select-bordered
+                    id="orden"
+                    class="select select-bordered select-sm
                            bg-[#0f172a] border-white/10 text-white">
                 <option value="asc" {% if order == 'asc' %}selected{% endif %}>
-                    A – Z
+                    A — Z
                 </option>
                 <option value="desc" {% if order == 'desc' %}selected{% endif %}>
-                    Z – A
+                    Z — A
                 </option>
             </select>
         </div>
@@ -53,27 +71,41 @@
          class="bg-[#020617] rounded-2xl border border-white/10 divide-y divide-white/5">
 
         {% if requerimientos %}
-            {% for r in requerimientos %}
-            <div class="flex items-center justify-between p-4 hover:bg-white/5 transition">
+            <!-- HEADER CON SELECT ALL -->
+            <div class="flex items-center p-4 bg-[#020617] border-b border-white/10">
+                <input type="checkbox" id="select-all" class="checkbox checkbox-sm mr-3">
+                <span class="text-gray-400 text-xs">Seleccionar todos</span>
+            </div>
 
-                <span class="text-white text-sm nombre-requerimiento"
+            {% for r in requerimientos %}
+            <div class="flex items-center justify-between p-4 hover:bg-white/5 transition requerimiento-item"
+                 data-id="{{ r.id }}">
+
+                <!-- CHECKBOX -->
+                <input type="checkbox" class="checkbox checkbox-sm select-row mr-3" data-id="{{ r.id }}">
+
+                <!-- NOMBRE -->
+                <span class="text-white text-sm nombre-requerimiento flex-1"
                       data-id="{{ r.id }}">
                     {{ r.nombre }}
                 </span>
 
-                <div class="flex gap-2">
+                <!-- ACCIONES -->
+                <div class="flex gap-2 acciones-wrapper">
                     <!-- EDITAR -->
                     <button type="button"
-                            class="btn btn-xs btn-outline btn-editar"
-                            data-id="{{ r.id }}">
-                        ✏️
+                            class="btn btn-xs btn-outline btn-editar hover:bg-blue-500/10 hover:border-blue-500 hover:text-blue-400 transition-all"
+                            data-id="{{ r.id }}"
+                            title="Editar">
+                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
                     </button>
 
                     <!-- ELIMINAR -->
                     <button type="button"
-                            class="btn btn-xs btn-error btn-outline btn-eliminar"
-                            data-id="{{ r.id }}">
-                        🗑️
+                            class="btn btn-xs btn-error btn-outline hover:bg-red-500/10 transition-all"
+                            data-id="{{ r.id }}"
+                            title="Eliminar">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                     </button>
                 </div>
 
@@ -89,123 +121,28 @@
 
 </div>
 
-<!-- =========================
-     JS
-========================= -->
+<!-- URLs para JavaScript -->
 <script>
-const buscador = document.querySelector('input[name="q"]');
-const orden = document.querySelector('select[name="order"]');
-const lista = document.getElementById('lista-requerimientos');
-const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-
-let timeout = null;
-
-/* ======================
-   CARGAR LISTA
-====================== */
-function cargarRequerimientos() {
-    const q = buscador.value;
-    const order = orden.value;
-
-    fetch(`?q=${encodeURIComponent(q)}&order=${order}`)
-        .then(response => response.text())
-        .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const nuevaLista = doc.getElementById('lista-requerimientos');
-            lista.innerHTML = nuevaLista.innerHTML;
-            activarEventos();
-        });
-}
-
-/* ======================
-   BUSCADOR DINÁMICO
-====================== */
-buscador.addEventListener('input', () => {
-    clearTimeout(timeout);
-    timeout = setTimeout(cargarRequerimientos, 300);
-});
-
-orden.addEventListener('change', cargarRequerimientos);
-
-/* ======================
-   AGREGAR
-====================== */
-document.getElementById("btn-agregar").addEventListener("click", () => {
-    const wrapper = document.getElementById("agregar-wrapper");
-
-    wrapper.innerHTML = `
-        <input id="nuevo-nombre"
-               class="input input-sm bg-[#0f172a] border-white/10 text-white w-40"
-               placeholder="Nuevo..." />
-        <button id="guardar-nuevo" class="btn btn-success btn-sm">✔</button>
-        <button id="cancelar-nuevo" class="btn btn-ghost btn-sm">✕</button>
-    `;
-
-    document.getElementById("guardar-nuevo").onclick = () => {
-        const nombre = document.getElementById("nuevo-nombre").value;
-
-        fetch("{% url 'configuracion:crear_requerimiento' %}", {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": csrftoken,
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            body: `nombre=${encodeURIComponent(nombre)}`
-        }).then(() => cargarRequerimientos());
+    window.APP_URLS = {
+        crearRequerimiento: "{% url 'configuracion:crear_requerimiento' %}",
+        editarRequerimiento: "/configuracion/requerimientos/",
+        eliminarRequerimiento: "/configuracion/requerimientos/",
+        eliminarRequerimientosMasivo: "{% url 'configuracion:eliminar_requerimientos_masivo' %}",
+        // Para construir URLs dinámicas
+        baseUrl: "/configuracion/requerimientos/"
     };
-
-    document.getElementById("cancelar-nuevo").onclick = () => location.reload();
-});
-
-/* ======================
-   EDITAR / ELIMINAR
-====================== */
-function activarEventos() {
-
-    document.querySelectorAll(".btn-editar").forEach(btn => {
-        btn.onclick = () => {
-            const id = btn.dataset.id;
-            const span = document.querySelector(`.nombre-requerimiento[data-id="${id}"]`);
-            const original = span.textContent.trim();
-
-            span.innerHTML = `
-                <input value="${original}"
-                       class="input input-sm bg-[#0f172a] border-white/10 text-white w-40"
-                       id="edit-${id}" />
-            `;
-            
-            btn.textContent = "✔";
-            btn.onclick = () => {
-                const nuevo = document.getElementById(`edit-${id}`).value;
-
-                fetch(`/configuracion/requerimientos/${id}/editar/`, {
-                    method: "POST",
-                    headers: {
-                        "X-CSRFToken": csrftoken,
-                        "Content-Type": "application/x-www-form-urlencoded"
-                    },
-                    body: `nombre=${encodeURIComponent(nuevo)}`
-                }).then(() => cargarRequerimientos());
-            };
-        };
-    });
-
-    document.querySelectorAll(".btn-eliminar").forEach(btn => {
-        btn.onclick = () => {
-            const id = btn.dataset.id;
-
-            if (!confirm("¿Eliminar este requerimiento?")) return;
-
-            fetch(`/configuracion/requerimientos/${id}/eliminar/`, {
-                method: "POST",
-                headers: { "X-CSRFToken": csrftoken }
-            }).then(() => cargarRequerimientos());
-        };
-    });
-}
-
-activarEventos();
 </script>
+
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    // Inicializar iconos después de cargar
+    document.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+    });
+</script>
+
+<!-- JavaScript separado -->
+<script src="{% static 'configuracion/requerimientos.js' %}"></script>
 
 {% endblock %}
