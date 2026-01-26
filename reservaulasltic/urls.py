@@ -1,11 +1,12 @@
 from django.contrib import admin
 from django.urls import path, include
-from django.shortcuts import redirect
+from django.views.generic import RedirectView  # 👈 Importar esto
 
 urlpatterns = [
-    path('', lambda request: redirect('reservas/nueva/')),  # 👈 ESTA LÍNEA
     path('admin/', admin.site.urls),
+    path('', RedirectView.as_view(url='/reservas/nueva/', permanent=False)),  # 👈 Agregar esto
+    path('', include('usuarios.urls')),
     path('reservas/', include('reservas.urls')),
-    path('calendario/', include('calendario.urls')),
     path('configuracion/', include('configuracion.urls')),
+    path('calendario/', include('calendario.urls')),
 ]

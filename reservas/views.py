@@ -8,6 +8,7 @@ from django.db.models import Q, Count
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
 
 horas = []
 for h in range(7, 22):
@@ -18,7 +19,7 @@ context = {
     "horas": horas,
 }
 
-
+@login_required
 def nueva_reserva(request):
     catedras = Catedra.objects.all()
     requerimientos = Requerimiento.objects.all()
@@ -122,7 +123,7 @@ def nueva_reserva(request):
 
     return render(request, 'reservas/nueva_reserva.html', context)
 
-
+@login_required
 def guardar_reserva(request):
     if request.method == "POST":
         aula_id = request.POST.get("aula_id")
@@ -221,7 +222,7 @@ def guardar_reserva(request):
 
     return redirect("reservas:nueva_reserva")
 
-
+@login_required
 def api_agenda_aula(request):
     aula_id = request.GET.get('aula')
     fecha = request.GET.get('fecha')
@@ -260,7 +261,7 @@ ORDER_MAP = {
     "-tipo": "-tipo",
 }
 
-
+@login_required
 def lista_reservas(request):
     tipo = request.GET.get("tipo", "ocasional")
     q = request.GET.get("q", "")
@@ -298,7 +299,7 @@ def lista_reservas(request):
 
     return render(request, 'reservas/lista_reservas.html', context)
 
-
+@login_required
 @require_POST
 def update_reserva(request, id):
     reserva = get_object_or_404(Reserva, pk=id)
@@ -359,7 +360,7 @@ def update_reserva(request, id):
             'message': f'Error inesperado: {str(e)}'
         }, status=500)
 
-
+@login_required
 @require_POST
 def delete_reservas(request):
     ids = request.POST.getlist('ids[]')

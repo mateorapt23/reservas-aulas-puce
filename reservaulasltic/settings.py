@@ -25,7 +25,12 @@ SECRET_KEY = 'django-insecure-fmi!@#v^b!$5y_jh@wxii-ooetb)#4)gg46)xu5x0$#k8)ljai
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '192.168.1.*',  # Permitir cualquier IP de la subred 192.168.1.x
+    '*',  # Permitir todas las conexiones (solo para desarrollo)
+]
 
 
 # Application definition
@@ -40,6 +45,7 @@ INSTALLED_APPS = [
     'configuracion',
     'reservas',
     'calendario',
+    'usuarios',
 ]
 
 MIDDLEWARE = [
@@ -78,11 +84,14 @@ WSGI_APPLICATION = 'reservaulasltic.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'reservaulasltic',
+        'USER': 'reservas_user',
+        'PASSWORD': '12345',  
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -106,16 +115,48 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
+LANGUAGE_CODE = 'es-ec'  
+TIME_ZONE = 'America/Guayaquil' 
 
 USE_I18N = True
-
 USE_TZ = True
+
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+LOGIN_URL = 'usuarios:login'
+LOGIN_REDIRECT_URL = 'reservas:nueva_reserva'
+LOGOUT_REDIRECT_URL = 'usuarios:login'
+
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 86400  # 24 horas
+SESSION_SAVE_EVERY_REQUEST = True
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+
+# Mensajes persistentes
+MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
+
+# Configuración de archivos estáticos (para cuando hagas collectstatic)
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Configuración de archivos media (si subes archivos en el futuro)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+USE_I18N = True
+USE_L10N = False  # ✅ Desactiva localización automática para evitar cambios inesperados
+USE_TZ = True
+
+# Formatos personalizados (OPCIONAL - solo si quieres tener control total)
+DATE_FORMAT = 'd/m/Y'
+DATETIME_FORMAT = 'd/m/Y H:i'
+TIME_FORMAT = 'H:i'

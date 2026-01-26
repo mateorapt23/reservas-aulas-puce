@@ -4,7 +4,9 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def requerimientos(request):
     q = request.GET.get('q', '')
     order = request.GET.get('order', 'asc')
@@ -27,6 +29,7 @@ def requerimientos(request):
         'order': order,
     })
 
+@login_required
 def crear_requerimiento(request):
     if request.method == "POST":
         nombre = request.POST.get("nombre")
@@ -34,7 +37,7 @@ def crear_requerimiento(request):
             Requerimiento.objects.create(nombre=nombre)
     return HttpResponse(status=200)
 
-
+@login_required
 def editar_requerimiento(request, id):
     if request.method == "POST":
         try:
@@ -48,6 +51,7 @@ def editar_requerimiento(request, id):
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)})
 
+@login_required
 def eliminar_requerimiento(request, id):
     if request.method == "POST":
         try:
@@ -57,6 +61,7 @@ def eliminar_requerimiento(request, id):
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)})
 
+@login_required
 def catedras(request):
     q = request.GET.get("q", "")
     order = request.GET.get("order", "asc")
@@ -79,7 +84,7 @@ def catedras(request):
 
     return render(request, "configuracion/catedras.html", context)
 
-
+@login_required
 def crear_catedra(request):
     if request.method == "POST":
         nombre = request.POST.get("nombre")
@@ -87,7 +92,7 @@ def crear_catedra(request):
             Catedra.objects.create(nombre=nombre)
     return HttpResponse(status=200)
 
-
+@login_required
 def editar_catedra(request, id):
     if request.method == "POST":
         try:
@@ -101,6 +106,7 @@ def editar_catedra(request, id):
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)})
 
+@login_required
 def eliminar_catedra(request, id):
     if request.method == "POST":
         try:
@@ -111,7 +117,7 @@ def eliminar_catedra(request, id):
             return JsonResponse({'success': False, 'message': str(e)})
 
 
-
+@login_required
 def aulas(request):
     q = request.GET.get("q", "")
     order = request.GET.get("order", "asc")
@@ -135,6 +141,7 @@ def aulas(request):
 
     return render(request, "configuracion/aulas.html", context)
 
+@login_required
 def crear_aula(request):
     if request.method == "POST":
         numero = request.POST.get("numero")
@@ -150,6 +157,7 @@ def crear_aula(request):
 
     return HttpResponse(status=200)
 
+@login_required
 def editar_aula(request, id):
     aula = get_object_or_404(Aula, id=id)
 
@@ -166,6 +174,7 @@ def editar_aula(request, id):
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)})
 
+@login_required
 def eliminar_aula(request, id):
     if request.method == "POST":
         try:
@@ -175,6 +184,7 @@ def eliminar_aula(request, id):
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)})
 
+@login_required
 @require_POST
 def eliminar_requerimientos_masivo(request):
     ids = request.POST.getlist('ids[]')
@@ -184,6 +194,7 @@ def eliminar_requerimientos_masivo(request):
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)})
 
+@login_required
 @require_POST
 def eliminar_catedras_masivo(request):
     ids = request.POST.getlist('ids[]')
@@ -193,6 +204,7 @@ def eliminar_catedras_masivo(request):
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)})
 
+@login_required
 @require_POST
 def eliminar_aulas_masivo(request):
     ids = request.POST.getlist('ids[]')

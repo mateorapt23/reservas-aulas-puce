@@ -1,0 +1,597 @@
+[
+{
+    "model": "auth.user",
+    "fields": {
+        "password": "pbkdf2_sha256$1200000$jazzCpW3rEc3Pe407pH0Ct$nhcodAQNOT6Q37U8moGVBjqdBSLEbj7szGTXu39yMFM=",
+        "last_login": "2026-01-26T08:13:42.365Z",
+        "is_superuser": true,
+        "username": "admin",
+        "first_name": "",
+        "last_name": "",
+        "email": "admin@gmail.com",
+        "is_staff": true,
+        "is_active": true,
+        "date_joined": "2026-01-15T00:45:22.847Z",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "auth.user",
+    "fields": {
+        "password": "pbkdf2_sha256$1200000$5aCXJF4tlWYMVGzodXLnjU$+ozRlVak1IDyqDbFqmQgWZNRZthHT48H5lp6KCaR1Eg=",
+        "last_login": "2026-01-25T11:02:09.812Z",
+        "is_superuser": true,
+        "username": "admin1",
+        "first_name": "",
+        "last_name": "",
+        "email": "admin1@gmail.com",
+        "is_staff": true,
+        "is_active": true,
+        "date_joined": "2026-01-25T10:18:32.014Z",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "sessions.session",
+    "pk": "sblyk03iidoyiblxj7dehl2u4jz8h98v",
+    "fields": {
+        "session_data": ".eJxVjMsOwiAQRf-FtSFQebp0328gMzBI1UBS2pXx35WkC93ec859sQD7VsLeaQ1LYhcm2el3Q4gPqgOkO9Rb47HVbV2QD4UftPO5JXpeD_fvoEAv31royVjMlJUnIqFQGiu0p5ij1hq8M2d0wiOZPIGUUZD1cWClvELr2PsD7EY4IA:1vkHjc:C5fbeU2xISBUpwynvg8gOnbEbhGzgiLb5-bg7EaZ3mM",
+        "expire_date": "2026-01-27T08:14:08.688Z"
+    }
+},
+{
+    "model": "configuracion.requerimiento",
+    "pk": 1,
+    "fields": {
+        "nombre": "AutoCAD"
+    }
+},
+{
+    "model": "configuracion.requerimiento",
+    "pk": 2,
+    "fields": {
+        "nombre": "PostgreSQL (VM)"
+    }
+},
+{
+    "model": "configuracion.requerimiento",
+    "pk": 3,
+    "fields": {
+        "nombre": "MySQL (VM)"
+    }
+},
+{
+    "model": "configuracion.requerimiento",
+    "pk": 4,
+    "fields": {
+        "nombre": "SQL Server (VM)"
+    }
+},
+{
+    "model": "configuracion.requerimiento",
+    "pk": 6,
+    "fields": {
+        "nombre": "Word"
+    }
+},
+{
+    "model": "configuracion.requerimiento",
+    "pk": 7,
+    "fields": {
+        "nombre": "Archi"
+    }
+},
+{
+    "model": "configuracion.requerimiento",
+    "pk": 8,
+    "fields": {
+        "nombre": "Excel"
+    }
+},
+{
+    "model": "configuracion.requerimiento",
+    "pk": 9,
+    "fields": {
+        "nombre": "Powerpoint"
+    }
+},
+{
+    "model": "configuracion.catedra",
+    "pk": 1,
+    "fields": {
+        "nombre": "Base de Datos I"
+    }
+},
+{
+    "model": "configuracion.catedra",
+    "pk": 2,
+    "fields": {
+        "nombre": "Base de datos II"
+    }
+},
+{
+    "model": "configuracion.catedra",
+    "pk": 3,
+    "fields": {
+        "nombre": "Arquitectura Empresarial"
+    }
+},
+{
+    "model": "configuracion.aula",
+    "pk": 1,
+    "fields": {
+        "numero": "201",
+        "capacidad": 23,
+        "requerimientos": [
+            2,
+            3,
+            4
+        ]
+    }
+},
+{
+    "model": "configuracion.aula",
+    "pk": 2,
+    "fields": {
+        "numero": "202",
+        "capacidad": 20,
+        "requerimientos": [
+            1,
+            6,
+            9
+        ]
+    }
+},
+{
+    "model": "configuracion.aula",
+    "pk": 3,
+    "fields": {
+        "numero": "203",
+        "capacidad": 30,
+        "requerimientos": [
+            2,
+            3,
+            4
+        ]
+    }
+},
+{
+    "model": "configuracion.aula",
+    "pk": 7,
+    "fields": {
+        "numero": "204",
+        "capacidad": 23,
+        "requerimientos": [
+            6,
+            8,
+            9
+        ]
+    }
+},
+{
+    "model": "configuracion.aula",
+    "pk": 8,
+    "fields": {
+        "numero": "205",
+        "capacidad": 5,
+        "requerimientos": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            7,
+            8,
+            9
+        ]
+    }
+},
+{
+    "model": "reservas.reserva",
+    "pk": 5,
+    "fields": {
+        "docente": "Hola",
+        "catedra": 3,
+        "aula": 2,
+        "fecha": "2026-01-22",
+        "hora_inicio": "16:00:00",
+        "hora_fin": "18:00:00",
+        "tipo": "semestral",
+        "fecha_fin_semestre": "2026-02-17",
+        "requerimientos": [
+            1,
+            6
+        ]
+    }
+},
+{
+    "model": "reservas.reserva",
+    "pk": 6,
+    "fields": {
+        "docente": "Hola",
+        "catedra": 3,
+        "aula": 2,
+        "fecha": "2026-01-29",
+        "hora_inicio": "16:00:00",
+        "hora_fin": "18:00:00",
+        "tipo": "semestral",
+        "fecha_fin_semestre": "2026-02-17",
+        "requerimientos": [
+            1,
+            6
+        ]
+    }
+},
+{
+    "model": "reservas.reserva",
+    "pk": 12,
+    "fields": {
+        "docente": "Holis babys",
+        "catedra": 1,
+        "aula": 2,
+        "fecha": "2026-02-21",
+        "hora_inicio": "08:00:00",
+        "hora_fin": "10:00:00",
+        "tipo": "ocasional",
+        "fecha_fin_semestre": null,
+        "requerimientos": [
+            6,
+            9
+        ]
+    }
+},
+{
+    "model": "reservas.reserva",
+    "pk": 13,
+    "fields": {
+        "docente": "dadasdasd",
+        "catedra": 1,
+        "aula": 7,
+        "fecha": "2026-02-13",
+        "hora_inicio": "07:00:00",
+        "hora_fin": "14:00:00",
+        "tipo": "ocasional",
+        "fecha_fin_semestre": null,
+        "requerimientos": [
+            6,
+            8,
+            9
+        ]
+    }
+},
+{
+    "model": "reservas.reserva",
+    "pk": 14,
+    "fields": {
+        "docente": "jJAJAJA",
+        "catedra": 1,
+        "aula": 1,
+        "fecha": "2026-02-10",
+        "hora_inicio": "07:00:00",
+        "hora_fin": "08:00:00",
+        "tipo": "ocasional",
+        "fecha_fin_semestre": null,
+        "requerimientos": [
+            2,
+            3,
+            4
+        ]
+    }
+},
+{
+    "model": "reservas.reserva",
+    "pk": 15,
+    "fields": {
+        "docente": "adasdasdaaa",
+        "catedra": 1,
+        "aula": 1,
+        "fecha": "2026-02-11",
+        "hora_inicio": "07:00:00",
+        "hora_fin": "09:00:00",
+        "tipo": "ocasional",
+        "fecha_fin_semestre": null,
+        "requerimientos": [
+            2,
+            3,
+            4
+        ]
+    }
+},
+{
+    "model": "reservas.reserva",
+    "pk": 16,
+    "fields": {
+        "docente": "jaja",
+        "catedra": 1,
+        "aula": 8,
+        "fecha": "2026-02-18",
+        "hora_inicio": "07:00:00",
+        "hora_fin": "08:00:00",
+        "tipo": "ocasional",
+        "fecha_fin_semestre": null,
+        "requerimientos": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            7,
+            8,
+            9
+        ]
+    }
+},
+{
+    "model": "reservas.reserva",
+    "pk": 17,
+    "fields": {
+        "docente": "jojojo",
+        "catedra": 1,
+        "aula": 1,
+        "fecha": "2026-02-10",
+        "hora_inicio": "08:00:00",
+        "hora_fin": "09:00:00",
+        "tipo": "ocasional",
+        "fecha_fin_semestre": null,
+        "requerimientos": [
+            2,
+            3,
+            4
+        ]
+    }
+},
+{
+    "model": "admin.logentry",
+    "pk": 1,
+    "fields": {
+        "action_time": "2026-01-15T00:46:02.204Z",
+        "user": [
+            "admin"
+        ],
+        "content_type": [
+            "configuracion",
+            "catedra"
+        ],
+        "object_id": "1",
+        "object_repr": "Base de Datos I",
+        "action_flag": 1,
+        "change_message": "[{\"added\": {}}]"
+    }
+},
+{
+    "model": "admin.logentry",
+    "pk": 2,
+    "fields": {
+        "action_time": "2026-01-15T00:46:08.872Z",
+        "user": [
+            "admin"
+        ],
+        "content_type": [
+            "configuracion",
+            "catedra"
+        ],
+        "object_id": "2",
+        "object_repr": "Base de datos II",
+        "action_flag": 1,
+        "change_message": "[{\"added\": {}}]"
+    }
+},
+{
+    "model": "admin.logentry",
+    "pk": 3,
+    "fields": {
+        "action_time": "2026-01-15T00:46:21.286Z",
+        "user": [
+            "admin"
+        ],
+        "content_type": [
+            "configuracion",
+            "catedra"
+        ],
+        "object_id": "3",
+        "object_repr": "Arquitectura Empresarial",
+        "action_flag": 1,
+        "change_message": "[{\"added\": {}}]"
+    }
+},
+{
+    "model": "admin.logentry",
+    "pk": 4,
+    "fields": {
+        "action_time": "2026-01-15T00:47:02.614Z",
+        "user": [
+            "admin"
+        ],
+        "content_type": [
+            "configuracion",
+            "requerimiento"
+        ],
+        "object_id": "1",
+        "object_repr": "AutoCAD",
+        "action_flag": 1,
+        "change_message": "[{\"added\": {}}]"
+    }
+},
+{
+    "model": "admin.logentry",
+    "pk": 5,
+    "fields": {
+        "action_time": "2026-01-15T00:47:08.826Z",
+        "user": [
+            "admin"
+        ],
+        "content_type": [
+            "configuracion",
+            "requerimiento"
+        ],
+        "object_id": "2",
+        "object_repr": "PostgreSQL (VM)",
+        "action_flag": 1,
+        "change_message": "[{\"added\": {}}]"
+    }
+},
+{
+    "model": "admin.logentry",
+    "pk": 6,
+    "fields": {
+        "action_time": "2026-01-15T00:47:16.880Z",
+        "user": [
+            "admin"
+        ],
+        "content_type": [
+            "configuracion",
+            "requerimiento"
+        ],
+        "object_id": "3",
+        "object_repr": "MySQL (VM)",
+        "action_flag": 1,
+        "change_message": "[{\"added\": {}}]"
+    }
+},
+{
+    "model": "admin.logentry",
+    "pk": 7,
+    "fields": {
+        "action_time": "2026-01-15T00:47:24.411Z",
+        "user": [
+            "admin"
+        ],
+        "content_type": [
+            "configuracion",
+            "requerimiento"
+        ],
+        "object_id": "4",
+        "object_repr": "SQL Server (VM)",
+        "action_flag": 1,
+        "change_message": "[{\"added\": {}}]"
+    }
+},
+{
+    "model": "admin.logentry",
+    "pk": 8,
+    "fields": {
+        "action_time": "2026-01-15T00:47:49.723Z",
+        "user": [
+            "admin"
+        ],
+        "content_type": [
+            "configuracion",
+            "requerimiento"
+        ],
+        "object_id": "5",
+        "object_repr": "Archi",
+        "action_flag": 1,
+        "change_message": "[{\"added\": {}}]"
+    }
+},
+{
+    "model": "admin.logentry",
+    "pk": 9,
+    "fields": {
+        "action_time": "2026-01-15T00:48:10.849Z",
+        "user": [
+            "admin"
+        ],
+        "content_type": [
+            "configuracion",
+            "requerimiento"
+        ],
+        "object_id": "6",
+        "object_repr": "Word",
+        "action_flag": 1,
+        "change_message": "[{\"added\": {}}]"
+    }
+},
+{
+    "model": "admin.logentry",
+    "pk": 10,
+    "fields": {
+        "action_time": "2026-01-15T00:48:40.525Z",
+        "user": [
+            "admin"
+        ],
+        "content_type": [
+            "configuracion",
+            "aula"
+        ],
+        "object_id": "1",
+        "object_repr": "Aula 201",
+        "action_flag": 1,
+        "change_message": "[{\"added\": {}}]"
+    }
+},
+{
+    "model": "admin.logentry",
+    "pk": 11,
+    "fields": {
+        "action_time": "2026-01-15T00:48:52.256Z",
+        "user": [
+            "admin"
+        ],
+        "content_type": [
+            "configuracion",
+            "aula"
+        ],
+        "object_id": "2",
+        "object_repr": "Aula 202",
+        "action_flag": 1,
+        "change_message": "[{\"added\": {}}]"
+    }
+},
+{
+    "model": "admin.logentry",
+    "pk": 12,
+    "fields": {
+        "action_time": "2026-01-15T04:46:05.877Z",
+        "user": [
+            "admin"
+        ],
+        "content_type": [
+            "configuracion",
+            "aula"
+        ],
+        "object_id": "3",
+        "object_repr": "Aula 203",
+        "action_flag": 1,
+        "change_message": "[{\"added\": {}}]"
+    }
+},
+{
+    "model": "admin.logentry",
+    "pk": 13,
+    "fields": {
+        "action_time": "2026-01-19T02:36:39.136Z",
+        "user": [
+            "admin"
+        ],
+        "content_type": [
+            "reservas",
+            "reserva"
+        ],
+        "object_id": "4",
+        "object_repr": "Reserva object (4)",
+        "action_flag": 3,
+        "change_message": ""
+    }
+},
+{
+    "model": "admin.logentry",
+    "pk": 14,
+    "fields": {
+        "action_time": "2026-01-22T04:41:41.505Z",
+        "user": [
+            "admin"
+        ],
+        "content_type": [
+            "reservas",
+            "reserva"
+        ],
+        "object_id": "10",
+        "object_repr": "Reserva object (10)",
+        "action_flag": 1,
+        "change_message": "[{\"added\": {}}]"
+    }
+}
+]

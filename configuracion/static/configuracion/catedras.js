@@ -331,6 +331,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll(".btn-eliminar").forEach(btn => {
             btn.onclick = () => {
                 const id = btn.dataset.id;
+                console.log("ID a eliminar:", id, btn); 
 
                 if (!confirm("¿Eliminar esta cátedra?")) return;
 

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Iniciar Sesión - Sistema LTIC</title>
+
+    <!-- Google Font: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind + DaisyUI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet"/>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body class="bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] min-h-screen font-sans flex items-center justify-center p-4">
+
+    <div class="w-full max-w-md">
+        
+        <!-- Logo y título -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-white mb-2">Sistema LTIC</h1>
+            <p class="text-gray-400">Gestión de Aulas</p>
+        </div>
+
+        <!-- Card de login -->
+        <div class="bg-[#020617] rounded-2xl shadow-2xl border border-white/10 p-8">
+            
+            <h2 class="text-xl font-semibold text-white mb-6 text-center">
+                Iniciar Sesión
+            </h2>
+
+            <!-- Mensajes de error -->
+            {% if form.errors %}
+                <div class="alert alert-error mb-6 bg-red-500/10 border-red-500/30 text-red-400">
+                    <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                    <span>Usuario o contraseña incorrectos</span>
+                </div>
+            {% endif %}
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info mb-6 bg-blue-500/10 border-blue-500/30 text-blue-400">
+                        <i data-lucide="info" class="w-5 h-5"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Formulario -->
+            <form method="POST" class="space-y-5">
+                {% csrf_token %}
+
+                <!-- Usuario -->
+                <div>
+                    <label class="label pb-1">
+                        <span class="label-text text-gray-300 font-medium">Usuario</span>
+                    </label>
+                    <div class="relative">
+                        <i data-lucide="user" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input 
+                            type="text" 
+                            name="username"
+                            required
+                            autofocus
+                            placeholder="Ingresa tu usuario"
+                            class="input input-bordered w-full pl-10 bg-[#0f172a] border-white/10 text-white focus:border-indigo-500 transition-all"
+                        />
+                    </div>
+                </div>
+
+                <!-- Contraseña -->
+                <div>
+                    <label class="label pb-1">
+                        <span class="label-text text-gray-300 font-medium">Contraseña</span>
+                    </label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input 
+                            type="password" 
+                            name="password"
+                            required
+                            placeholder="Ingresa tu contraseña"
+                            class="input input-bordered w-full pl-10 bg-[#0f172a] border-white/10 text-white focus:border-indigo-500 transition-all"
+                        />
+                    </div>
+                </div>
+
+                <!-- Botón -->
+                <button 
+                    type="submit"
+                    class="btn btn-primary w-full gap-2 mt-6 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 border-0 text-white font-semibold shadow-lg hover:shadow-indigo-500/50 transition-all"
+                >
+                    <i data-lucide="log-in" class="w-5 h-5"></i>
+                    Iniciar Sesión
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <script>
+        // Inicializar iconos
+        lucide.createIcons();
+    </script>
+
+</body>
+</html>

@@ -2,8 +2,10 @@ from django.shortcuts import render
 from configuracion.models import Aula
 from reservas.models import Reserva
 from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
 
 
+@login_required
 def agenda_por_aula(request):
     aulas = Aula.objects.all().order_by('numero')
     return render(request, 'calendario/agenda_por_aula.html', {
@@ -13,6 +15,7 @@ def agenda_por_aula(request):
 from django.http import JsonResponse
 from reservas.models import Reserva
 
+@login_required
 def reservas_por_aula(request):
     aula_id = request.GET.get('aula')
     fecha = request.GET.get('fecha')
