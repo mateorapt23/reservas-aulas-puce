@@ -87,27 +87,121 @@ document.addEventListener('DOMContentLoaded', function () {
         initGlobalTimePicker();
     }
 
-    // 1. Ordenamiento por columnas
+    // 1. Ordenamiento MÚLTIPLE por columnas
+    let ordenesActivos = []; // [{field: 'docente', dir: 'asc'}, {field: 'fecha', dir: 'desc'}]
+    
     function initOrdenamiento() {
-        document.querySelectorAll('.order-link').forEach(link => {
-            link.addEventListener('click', e => {
+        // Leer órdenes de la URL al cargar
+        const params = new URLSearchParams(window.location.search);
+        const orderParam = params.get('order');
+        if (orderParam) {
+            ordenesActivos = orderParam.split(',').map(o => {
+                const dir = o.startsWith('-') ? 'desc' : 'asc';
+                const field = o.replace(/^-/, '');
+                return {field, dir};
+            });
+        }
+        
+        actualizarIndicadoresVisuales();
+        
+        document.querySelectorAll('.order-btn').forEach(btn => {
+            btn.addEventListener('click', e => {
                 e.preventDefault();
+                const field = btn.dataset.field;
+                
                 guardarSeleccion(); // 👈 Guardar ANTES de ordenar
-                const url = link.href;
-                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-                    .then(r => r.text())
-                    .then(html => {
-                        tablaContainer.innerHTML = html;
-                        restaurarSeleccion(); // 👈 Restaurar DESPUÉS
-                        initAllEvents();
-                        updateBotonEliminar();
-                        
-                        // Re-inicializar iconos
-                        lucide.createIcons();
-                    })
-                    .catch(err => console.error(err));
+                
+                // Buscar si ya existe este campo en los órdenes activos
+                const existeIdx = ordenesActivos.findIndex(o => o.field === field);
+                
+                if (existeIdx !== -1) {
+                    // Ya existe: cambiar dirección o quitar
+                    const orden = ordenesActivos[existeIdx];
+                    if (orden.dir === 'asc') {
+                        // Cambiar a descendente y mover al principio (prioridad 1)
+                        orden.dir = 'desc';
+                        ordenesActivos.splice(existeIdx, 1);
+                        ordenesActivos.unshift(orden);
+                    } else {
+                        // Quitar completamente
+                        ordenesActivos.splice(existeIdx, 1);
+                    }
+                } else {
+                    // No existe: agregar AL PRINCIPIO con dirección ascendente (prioridad 1)
+                    ordenesActivos.unshift({field, dir: 'asc'});
+                }
+                
+                aplicarOrdenamiento();
             });
         });
+    }
+    
+    function aplicarOrdenamiento() {
+        // Construir parámetro order: el PRIMERO del array tiene prioridad 1
+        const orderString = ordenesActivos.map(o => 
+            (o.dir === 'desc' ? '-' : '') + o.field
+        ).join(',');
+        
+        const params = new URLSearchParams(window.location.search);
+        
+        if (orderString) {
+            params.set('order', orderString);
+        } else {
+            params.delete('order');
+        }
+        
+        const url = window.APP_URLS.listaReservas + '?' + params.toString();
+        
+        // Actualizar URL sin recargar página
+        window.history.replaceState({}, '', '?' + params.toString());
+        
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.text())
+            .then(html => {
+                tablaContainer.innerHTML = html;
+                restaurarSeleccion(); // 👈 Restaurar DESPUÉS
+                initAllEvents();
+                updateBotonEliminar();
+                actualizarIndicadoresVisuales();
+                
+                // Re-inicializar iconos
+                lucide.createIcons();
+            })
+            .catch(err => console.error(err));
+    }
+    
+    function actualizarIndicadoresVisuales() {
+        // Limpiar todos los indicadores y estilos
+        document.querySelectorAll('.order-btn').forEach(btn => {
+            btn.classList.remove('text-blue-400');
+        });
+        document.querySelectorAll('.order-indicator').forEach(ind => {
+            ind.innerHTML = '';
+        });
+        
+        // Agregar indicadores para cada orden activo
+        // El índice 0 es prioridad 1, índice 1 es prioridad 2, etc.
+        ordenesActivos.forEach((orden, idx) => {
+            const btn = document.querySelector(`.order-btn[data-field="${orden.field}"]`);
+            if (!btn) return;
+            
+            const indicator = btn.querySelector('.order-indicator');
+            const numero = idx + 1; // Prioridad visual: 1, 2, 3...
+            
+            // Agregar flecha y número
+            indicator.innerHTML = `
+                <i data-lucide="${orden.dir === 'asc' ? 'arrow-up' : 'arrow-down'}" class="w-3 h-3 text-blue-400"></i>
+                ${ordenesActivos.length > 1 ? `<span class="text-[10px] text-blue-400 font-bold">${numero}</span>` : ''}
+            `;
+            
+            // Resaltar el botón
+            btn.classList.add('text-blue-400');
+        });
+        
+        // Re-inicializar iconos de Lucide
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     }
 
     // 2. Búsqueda en tiempo real (debounce)

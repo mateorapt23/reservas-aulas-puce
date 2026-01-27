@@ -3,64 +3,40 @@
         <tr>
             <th class="w-10"><input type="checkbox" id="select-all"></th>
             <th>
-                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'docente' %}-{% endif %}docente" class="order-link flex items-center gap-1">
+                <button class="order-btn flex items-center gap-1 hover:text-blue-400 transition-colors cursor-pointer" data-field="docente">
                     Docente
-                    {% if order == 'docente' %}
-                        <i data-lucide="arrow-up" class="w-3 h-3"></i>
-                    {% elif order == '-docente' %}
-                        <i data-lucide="arrow-down" class="w-3 h-3"></i>
-                    {% endif %}
-                </a>
+                    <span class="order-indicator ml-1 flex items-center gap-0.5"></span>
+                </button>
             </th>
             <th>
-                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'catedra' %}-{% endif %}catedra" class="order-link flex items-center gap-1">
+                <button class="order-btn flex items-center gap-1 hover:text-blue-400 transition-colors cursor-pointer" data-field="catedra">
                     Cátedra
-                    {% if order == 'catedra' %}
-                        <i data-lucide="arrow-up" class="w-3 h-3"></i>
-                    {% elif order == '-catedra' %}
-                        <i data-lucide="arrow-down" class="w-3 h-3"></i>
-                    {% endif %}
-                </a>
+                    <span class="order-indicator ml-1 flex items-center gap-0.5"></span>
+                </button>
             </th>
             <th>
-                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'aula' %}-{% endif %}aula" class="order-link flex items-center gap-1">
+                <button class="order-btn flex items-center gap-1 hover:text-blue-400 transition-colors cursor-pointer" data-field="aula">
                     Aula
-                    {% if order == 'aula' %}
-                        <i data-lucide="arrow-up" class="w-3 h-3"></i>
-                    {% elif order == '-aula' %}
-                        <i data-lucide="arrow-down" class="w-3 h-3"></i>
-                    {% endif %}
-                </a>
+                    <span class="order-indicator ml-1 flex items-center gap-0.5"></span>
+                </button>
             </th>
             <th>
-                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'fecha' %}-{% endif %}fecha" class="order-link flex items-center gap-1">
+                <button class="order-btn flex items-center gap-1 hover:text-blue-400 transition-colors cursor-pointer" data-field="fecha">
                     Fecha
-                    {% if order == 'fecha' %}
-                        <i data-lucide="arrow-up" class="w-3 h-3"></i>
-                    {% elif order == '-fecha' %}
-                        <i data-lucide="arrow-down" class="w-3 h-3"></i>
-                    {% endif %}
-                </a>
+                    <span class="order-indicator ml-1 flex items-center gap-0.5"></span>
+                </button>
             </th>
             <th>
-                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'hora_inicio' %}-{% endif %}hora_inicio" class="order-link flex items-center gap-1">
+                <button class="order-btn flex items-center gap-1 hover:text-blue-400 transition-colors cursor-pointer" data-field="hora_inicio">
                     Hora inicio
-                    {% if order == 'hora_inicio' %}
-                        <i data-lucide="arrow-up" class="w-3 h-3"></i>
-                    {% elif order == '-hora_inicio' %}
-                        <i data-lucide="arrow-down" class="w-3 h-3"></i>
-                    {% endif %}
-                </a>
+                    <span class="order-indicator ml-1 flex items-center gap-0.5"></span>
+                </button>
             </th>
             <th>
-                <a href="?tipo={{ tipo_actual }}&q={{ q }}&order={% if order == 'hora_fin' %}-{% endif %}hora_fin" class="order-link flex items-center gap-1">
+                <button class="order-btn flex items-center gap-1 hover:text-blue-400 transition-colors cursor-pointer" data-field="hora_fin">
                     Hora fin
-                    {% if order == 'hora_fin' %}
-                        <i data-lucide="arrow-up" class="w-3 h-3"></i>
-                    {% elif order == '-hora_fin' %}
-                        <i data-lucide="arrow-down" class="w-3 h-3"></i>
-                    {% endif %}
-                </a>
+                    <span class="order-indicator ml-1 flex items-center gap-0.5"></span>
+                </button>
             </th>
             <th>Tipo</th>
             <th>Acciones</th>

@@ -279,8 +279,22 @@ def lista_reservas(request):
             Q(aula__numero__icontains=q)
         )
 
-    order_by = ORDER_MAP.get(order, "fecha")
-    reservas = reservas.order_by(order_by)
+    # 🔥 SOPORTE PARA ORDENAMIENTOS MÚLTIPLES
+    # Formato: order=docente,-fecha,aula (separados por coma)
+    if order:
+        order_fields = []
+        for field in order.split(','):
+            field = field.strip()
+            if field in ORDER_MAP:
+                order_fields.append(ORDER_MAP[field])
+        
+        if order_fields:
+            reservas = reservas.order_by(*order_fields)
+        else:
+            # Fallback: orden por fecha si no hay campos válidos
+            reservas = reservas.order_by("fecha")
+    else:
+        reservas = reservas.order_by("fecha")
 
     catedras = Catedra.objects.all().order_by('nombre')
     aulas = Aula.objects.all().order_by('numero')
@@ -372,4 +386,3 @@ def delete_reservas(request):
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
-

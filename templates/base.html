@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -110,7 +111,9 @@
                     text-white font-semibold text-lg
                     shadow-[0_0_15px_rgba(99,102,241,0.5)]
                 ">
-                    GA
+                    <img src="{% static 'images/logoltic.jpeg' %}" 
+                         alt="Logo LTIC" 
+                         class="w-full h-full object-contain">
                 </div>
                 <div class="menu-text">
                     <p class="text-lg font-semibold text-gray-100 leading-tight whitespace-nowrap">
