@@ -2,307 +2,619 @@
 
 Sistema web para gestionar reservas de aulas, cátedras y requerimientos en una institución educativa.
 
-## 📋 Requisitos Previos
-
-- Python 3.10 o superior
-- PostgreSQL 14 o superior
-- Git (opcional, para clonar el repositorio)
+**💡 Este sistema funciona en RED LOCAL únicamente** - No requiere internet.
 
 ---
 
-## 🚀 Instalación en PC de Desarrollo
+## 📦 Archivos Incluidos
 
-### 1. **Clonar o copiar el proyecto**
-```bash
-git clone https://github.com/tu-usuario/reservaulasltic.git
-cd reservaulasltic
-```
+Este proyecto incluye los siguientes archivos de configuración listos para usar:
 
-O simplemente copia la carpeta del proyecto.
+- ✅ **`requirements.txt`** - Lista de dependencias de Python
+- ✅ **`iniciar_servidor.bat`** - Script para iniciar el servidor automáticamente
+- ✅ **`backup_diario.bat`** - Script para realizar backups automáticos de la base de datos
 
-### 2. **Crear y activar entorno virtual**
+**💡 Nota:** Solo copia estos archivos a la carpeta `C:\reservaulasltic\` y sigue las instrucciones. No necesitas crearlos manualmente (aunque también te explico cómo si quieres hacerlo).
 
-**Windows:**
-```cmd
-python -m venv venv
-venv\Scripts\activate
-```
+---
 
-**Linux / macOS:**
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
+## 📋 Requisitos Previos
 
-**Nota para Windows PowerShell:** Si obtienes error de permisos:
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
+- Windows 10/11 (para el servidor)
+- Python 3.10 o superior
+- PostgreSQL 14 o superior
+- Todos los PCs deben estar en la misma red local
 
-### 3. **Instalar dependencias**
-```bash
-pip install -r requirements.txt
-```
+---
 
-### 4. **Configurar PostgreSQL**
+## 🖥️ Instalación en PC Servidor
 
-#### Instalar PostgreSQL:
-- Descargar desde: https://www.postgresql.org/download/
-- Durante la instalación, anota el puerto (5432) y la contraseña del usuario `postgres`
+### Paso 1: Instalar Python
 
-#### Crear la base de datos:
+1. Descargar desde: https://www.python.org/downloads/
+2. **IMPORTANTE**: Al instalar, marcar ✅ **"Add Python to PATH"**
+3. Verificar instalación abriendo CMD:
+   ```cmd
+   python --version
+   ```
 
-Abre **SQL Shell (psql)** y ejecuta:
+### Paso 2: Instalar PostgreSQL
+
+1. Descargar desde: https://www.postgresql.org/download/windows/
+2. Durante la instalación:
+   - Puerto: **5432** (dejar por defecto)
+   - Contraseña: Anota la contraseña que pongas para el usuario `postgres`
+   - Idioma: Español (opcional)
+
+### Paso 3: Crear la Base de Datos
+
+1. Abre **SQL Shell (psql)** (busca en el menú inicio)
+2. Presiona Enter 4 veces (deja todo por defecto)
+3. Ingresa la contraseña de `postgres` que pusiste en la instalación
+4. Copia y pega estos comandos uno por uno:
+
 ```sql
 CREATE DATABASE reservaulasltic;
-CREATE USER reservas_user WITH PASSWORD 'MiPassword123';
+CREATE USER reservas_user WITH PASSWORD '12345';
 ALTER ROLE reservas_user SET client_encoding TO 'utf8';
 ALTER ROLE reservas_user SET default_transaction_isolation TO 'read committed';
 ALTER ROLE reservas_user SET timezone TO 'America/Guayaquil';
 GRANT ALL PRIVILEGES ON DATABASE reservaulasltic TO reservas_user;
-\q
 ```
 
-### 5. **Configurar `settings.py`**
+5. Sal con: `\q`
 
-Verifica que la configuración de la base de datos sea correcta:
+### Paso 4: Copiar el Proyecto
+
+1. Copia la carpeta `reservaulasltic` al servidor (por USB o red)
+2. Recomendado: Ponla en `C:\reservaulasltic\`
+
+### Paso 5: Instalar Dependencias
+
+1. Abre CMD **como Administrador**
+2. Ve a la carpeta del proyecto:
+   ```cmd
+   cd C:\reservaulasltic
+   ```
+
+3. Crea el entorno virtual:
+   ```cmd
+   python -m venv venv
+   ```
+
+4. Activa el entorno virtual:
+   ```cmd
+   venv\Scripts\activate
+   ```
+
+5. Instala las dependencias:
+   ```cmd
+   pip install -r requirements.txt
+   ```
+
+### Paso 6: Configurar la Base de Datos
+
+Abre el archivo `settings.py` y verifica que tenga esto:
+
 ```python
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'reservaulasltic',
         'USER': 'reservas_user',
-        'PASSWORD': 'MiPassword123',  # Cambia según tu configuración
+        'PASSWORD': '12345',  # Usa la contraseña que pusiste
         'HOST': 'localhost',
         'PORT': '5432',
     }
 }
 ```
 
-### 6. **Aplicar migraciones**
-```bash
+### Paso 7: Aplicar Migraciones
+
+Desde CMD (con el entorno virtual activado):
+
+```cmd
 python manage.py migrate
 ```
 
-### 7. **Crear superusuario**
-```bash
+### Paso 8: Crear el Primer Usuario Administrador
+
+```cmd
 python manage.py createsuperuser
 ```
 
-### 8. **Iniciar servidor de desarrollo**
-```bash
-python manage.py runserver
+Ingresa:
+- Usuario: (por ejemplo: `admin`)
+- Email: (puede ser cualquiera, ejemplo: `admin@ltic.edu`)
+- Contraseña: (mínimo 8 caracteres, anótala bien)
+
+### Paso 9: Permitir Conexiones en el Firewall
+
+Abre CMD **como Administrador** y ejecuta:
+
+```cmd
+netsh advfirewall firewall add rule name="Django Server LTIC" dir=in action=allow protocol=TCP localport=8000
 ```
 
-Accede a: http://localhost:8000
+### Paso 10: Configurar PostgreSQL para Red Local
 
----
+#### a) Editar postgresql.conf
 
-## 🖥️ Instalación en PC Servidor (Producción)
+1. Ve a: `C:\Program Files\PostgreSQL\16\data\postgresql.conf`
+   (El "16" puede ser otra versión, busca tu versión)
+2. Abre con Notepad
+3. Busca la línea `listen_addresses` y cámbiala a:
+   ```conf
+   listen_addresses = '*'
+   ```
+4. Guarda y cierra
 
-### 1. **Requisitos del servidor**
+#### b) Editar pg_hba.conf
 
-- Windows 10/11 o Windows Server
-- Python 3.10+
-- PostgreSQL 14+
-- Conexión a red local
+1. Abre: `C:\Program Files\PostgreSQL\16\data\pg_hba.conf`
+2. Al final del archivo, agrega esta línea:
+   ```conf
+   host    reservaulasltic    reservas_user    192.168.0.0/16    md5
+   ```
+3. Guarda y cierra
 
-### 2. **Copiar el proyecto al servidor**
+#### c) Reiniciar PostgreSQL
 
-Copia toda la carpeta del proyecto a la PC servidor (por USB, red compartida, etc.)
+1. Presiona `Win + R` y escribe: `services.msc`
+2. Busca "PostgreSQL"
+3. Clic derecho → **Reiniciar**
 
-### 3. **Instalar PostgreSQL en el servidor**
+### Paso 11: Probar el Servidor
 
-- Descargar e instalar desde: https://www.postgresql.org/download/windows/
-- Anotar puerto (5432) y contraseña de `postgres`
-
-### 4. **Crear entorno virtual e instalar dependencias**
 ```cmd
-cd ruta\del\proyecto
-python -m venv venv
+cd C:\reservaulasltic
 venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-### 5. **Configurar PostgreSQL para conexiones de red**
-
-#### a) Crear la base de datos:
-
-Abre **SQL Shell (psql)**:
-```sql
-CREATE DATABASE reservaulasltic;
-CREATE USER reservas_user WITH PASSWORD 'MiPassword123';
-ALTER ROLE reservas_user SET client_encoding TO 'utf8';
-ALTER ROLE reservas_user SET default_transaction_isolation TO 'read committed';
-ALTER ROLE reservas_user SET timezone TO 'America/Guayaquil';
-GRANT ALL PRIVILEGES ON DATABASE reservaulasltic TO reservas_user;
-\q
-```
-
-#### b) Permitir conexiones externas:
-
-**Ubicación de archivos de configuración:**
-`C:\Program Files\PostgreSQL\{version}\data\`
-
-**Editar `postgresql.conf`:**
-```conf
-listen_addresses = '*'
-```
-
-**Editar `pg_hba.conf`** (agregar al final):
-```conf
-# Permitir conexiones desde la red local
-host    reservaulasltic    reservas_user    192.168.1.0/24    md5
-```
-
-**Reiniciar PostgreSQL:**
-- Servicios de Windows → PostgreSQL → Reiniciar
-
-### 6. **Configurar Firewall de Windows**
-
-Permitir el puerto 8000 (Django) y 5432 (PostgreSQL):
-```cmd
-netsh advfirewall firewall add rule name="Django Server" dir=in action=allow protocol=TCP localport=8000
-netsh advfirewall firewall add rule name="PostgreSQL" dir=in action=allow protocol=TCP localport=5432
-```
-
-### 7. **Aplicar migraciones y crear superusuario**
-```cmd
-python manage.py migrate
-python manage.py createsuperuser
-```
-
-### 8. **Iniciar servidor para toda la red**
-```cmd
 python manage.py runserver 0.0.0.0:8000
 ```
 
-### 9. **Acceder desde otros PCs**
-
-Desde cualquier PC en la red local:
+Verás algo como:
 ```
-http://192.168.1.X:8000
+Starting development server at http://0.0.0.0:8000/
 ```
 
-(Reemplaza `X` con la IP del servidor. Para ver la IP: `ipconfig`)
+**Prueba desde el mismo servidor:** Abre un navegador y ve a `http://localhost:8000`
 
 ---
 
-## 📁 Estructura del Proyecto
-```
-reservaulasltic/
-├── configuracion/        # Gestión de aulas, cátedras, requerimientos
-├── reservas/             # Gestión de reservas
-├── calendario/           # Visualización de calendario
-├── usuarios/             # Autenticación
-├── templates/            # Plantillas HTML globales
-├── static/               # Archivos estáticos (CSS, JS)
-├── manage.py
-├── requirements.txt
-└── README.md
-```
+## 🔄 AUTO-INICIO DEL SERVIDOR (LO MÁS IMPORTANTE)
 
----
+Para que el servidor inicie automáticamente cada vez que enciendas la PC:
 
-## 🔧 Configuración Adicional
+### Método 1: Script BAT Simple (Recomendado)
 
-### Cambiar contraseña de PostgreSQL
+#### 1. Crear el Script
 
-Si necesitas cambiar la contraseña de la base de datos:
+**Opción A - Descargar el archivo listo:**
 
-1. Edita `settings.py`:
-```python
-DATABASES = {
-    'default': {
-        'PASSWORD': 'TuNuevaContraseña',
-        # ... resto de configuración
-    }
-}
-```
+Ya tienes el archivo `iniciar_servidor.bat` listo para usar. Solo cópialo a `C:\reservaulasltic\`
 
-2. Cambia la contraseña en PostgreSQL:
-```sql
-ALTER USER reservas_user WITH PASSWORD 'TuNuevaContraseña';
-```
+**Opción B - Crearlo manualmente:**
 
-### Modo Debug
+1. Abre **Notepad** (Bloc de notas)
+2. Copia y pega **exactamente** este código:
 
-**Para desarrollo (settings.py):**
-```python
-DEBUG = True
-ALLOWED_HOSTS = ['*']
-```
-
-**Para producción:**
-```python
-DEBUG = False
-ALLOWED_HOSTS = ['192.168.1.X', 'localhost']  # IP del servidor
-```
-
----
-
-## 🛠️ Comandos Útiles
-```bash
-# Crear nuevas migraciones
-python manage.py makemigrations
-
-# Aplicar migraciones
-python manage.py migrate
-
-# Crear superusuario
-python manage.py createsuperuser
-
-# Iniciar servidor (desarrollo)
-python manage.py runserver
-
-# Iniciar servidor (red local)
+```batch
+@echo off
+title Sistema de Reservas LTIC - Servidor Activo
+color 0A
+cd /d "%~dp0"
+echo ====================================
+echo   SISTEMA DE RESERVAS - LTIC
+echo ====================================
+echo.
+echo Iniciando servidor...
+echo.
+call venv\Scripts\activate
 python manage.py runserver 0.0.0.0:8000
+pause
+```
 
+3. Click en **Archivo** → **Guardar como**
+4. Nombre del archivo: `iniciar_servidor.bat`
+5. Tipo: **Todos los archivos (*.*)**
+6. Ubicación: `C:\reservaulasltic\`
+7. Click en **Guardar**
+
+**⚠️ IMPORTANTE:** 
+- El nombre debe ser **exactamente** `iniciar_servidor.bat` (con la extensión .bat)
+- NO lo guardes como .txt
+- Guárdalo en la carpeta raíz del proyecto: `C:\reservaulasltic\`
+
+#### 2. Configurar Inicio Automático
+
+**Opción A - Carpeta de Inicio (MÁS FÁCIL):**
+
+1. Presiona `Win + R` y escribe: `shell:startup`
+2. Se abre una carpeta
+3. Crea un acceso directo de `iniciar_servidor.bat` ahí:
+   - Clic derecho en `iniciar_servidor.bat` → Enviar a → Escritorio (crear acceso directo)
+   - Corta ese acceso directo del escritorio y pégalo en la carpeta de inicio
+4. Clic derecho en el acceso directo → Propiedades
+5. En "Ejecutar", selecciona: **Minimizada**
+6. Aceptar
+
+**Opción B - Programador de Tareas (MÁS CONTROL):**
+
+1. Presiona `Win + R` y escribe: `taskschd.msc`
+2. En el panel derecho, click en **"Crear tarea básica"**
+3. Nombre: `Servidor Django LTIC`
+4. Desencadenador: **Al iniciar el equipo**
+5. Acción: **Iniciar un programa**
+6. Programa: `C:\reservaulasltic\iniciar_servidor.bat`
+7. Iniciar en: `C:\reservaulasltic\`
+8. Marcar: ✅ **"Ejecutar con los privilegios más altos"**
+9. Finalizar
+
+#### 3. Probar el Auto-Inicio
+
+1. Reinicia la PC
+2. Espera 30 segundos después de iniciar
+3. Abre un navegador y ve a `http://localhost:8000`
+4. Deberías ver el sistema funcionando
+
+**💡 Nota:** La ventana del servidor aparecerá minimizada. Para verla, busca "Sistema de Reservas LTIC" en la barra de tareas.
+
+---
+
+## 👥 ACCESO DESDE OTROS PCs (CLIENTES)
+
+### Paso 1: Obtener la IP del Servidor
+
+En el servidor, abre CMD y escribe:
+```cmd
+ipconfig
+```
+
+Busca la línea que dice **"Dirección IPv4"** en tu adaptador de red (Ethernet o Wi-Fi).
+Ejemplo: `192.168.1.100`
+
+**⚠️ ANOTA ESTA IP - LA NECESITARÁS**
+
+### Paso 2: Acceder desde las PCs Clientes
+
+En cualquier PC de la red local:
+
+1. Abre un navegador (Chrome, Firefox, Edge)
+2. Escribe en la barra de direcciones:
+   ```
+   http://192.168.1.100:8000
+   ```
+   (Reemplaza `192.168.1.100` con la IP de tu servidor)
+
+3. Deberías ver la pantalla de login
+
+### Paso 3: Crear Usuarios para Cada Persona
+
+Cada persona debe tener su propia cuenta:
+
+#### Método 1 - Desde la PC Servidor (Consola):
+
+```cmd
+cd C:\reservaulasltic
+venv\Scripts\activate
+python manage.py createsuperuser
+```
+
+Crea un usuario para cada persona:
+- Usuario: `maria.lopez`
+- Email: `maria@ltic.edu`
+- Contraseña: (que la persona elija una segura)
+
+#### Método 2 - Desde el Admin Web (MÁS FÁCIL):
+
+1. Ve a: `http://192.168.1.100:8000/admin`
+2. Inicia sesión con el usuario admin
+3. Click en **"Usuarios"** → **"Agregar Usuario"**
+4. Completa:
+   - Nombre de usuario
+   - Contraseña (2 veces)
+5. Click en **"Guardar y continuar editando"**
+6. En la siguiente pantalla:
+   - Nombre y apellido (opcional)
+   - Email (opcional)
+   - **Permisos:** Marca ✅ "Estado de superusuario" si quieres que tenga acceso completo
+7. Click en **"Guardar"**
+
+**Repite esto para cada persona que usará el sistema.**
+
+---
+
+## 📊 VERIFICAR QUE TODO FUNCIONE BIEN
+
+### Verificar Usuarios Conectados:
+
+1. Abre **SQL Shell (psql)**
+2. Ingresa estos comandos:
+
+```sql
+\c reservaulasltic
+SELECT datname, usename, client_addr, state FROM pg_stat_activity WHERE datname = 'reservaulasltic';
+```
+
+Verás la lista de usuarios conectados con sus IPs.
+
+### Verificar Tamaño de la Base de Datos:
+
+```sql
+SELECT pg_size_pretty(pg_database_size('reservaulasltic'));
+```
+
+---
+
+## 💾 BACKUP DE LA BASE DE DATOS (IMPORTANTE)
+
+### Backup Manual
+
+1. Abre CMD
+2. Ejecuta:
+
+```cmd
+set PGPASSWORD=12345
+"C:\Program Files\PostgreSQL\16\bin\pg_dump.exe" -U reservas_user -h localhost reservaulasltic > C:\backups\reservas_FECHA.sql
+```
+
+(Crea la carpeta `C:\backups\` antes)
+
+### Backup Automático Diario
+
+#### 1. Crear la carpeta de backups
+
+Abre CMD y ejecuta:
+```cmd
+mkdir C:\backups
+```
+
+#### 2. Crear el script de backup
+
+**Opción A - Usar el archivo listo:**
+
+Ya tienes el archivo `backup_diario.bat` listo. Solo cópialo a `C:\reservaulasltic\`
+
+**Opción B - Crearlo manualmente:**
+
+1. Abre **Notepad** (Bloc de notas)
+2. Copia y pega **exactamente** este código:
+
+```batch
+@echo off
+set PGPASSWORD=12345
+set FECHA=%date:~-4,4%%date:~-7,2%%date:~-10,2%
+"C:\Program Files\PostgreSQL\16\bin\pg_dump.exe" -U reservas_user -h localhost reservaulasltic > "C:\backups\reservas_%FECHA%.sql"
+echo Backup completado: reservas_%FECHA%.sql
+```
+
+3. Click en **Archivo** → **Guardar como**
+4. Nombre del archivo: `backup_diario.bat`
+5. Tipo: **Todos los archivos (*.*)**
+6. Ubicación: `C:\reservaulasltic\`
+7. Click en **Guardar**
+
+**⚠️ IMPORTANTE:** 
+- Si tu PostgreSQL es versión diferente a 16, cambia el "16" en la ruta
+- Para encontrar tu versión: ve a `C:\Program Files\PostgreSQL\` y verás la carpeta con el número
+- La contraseña debe coincidir con la de `settings.py` (en este caso es `12345`)
+
+#### 3. Probar el backup manualmente
+
+1. Abre CMD
+2. Ejecuta:
+   ```cmd
+   cd C:\reservaulasltic
+   backup_diario.bat
+   ```
+3. Verifica que se creó el archivo en `C:\backups\reservas_YYYYMMDD.sql`
+
+#### 4. Configurar backup automático diario
+
+1. Presiona `Win + R` y escribe: `taskschd.msc`
+2. En el panel derecho, click en **"Crear tarea básica"**
+3. Completa así:
+   - **Nombre:** `Backup Diario Base de Datos`
+   - **Descripción:** `Backup automático de reservas a las 2:00 AM`
+   - **Desencadenador:** Selecciona **"Diariamente"**
+   - **Hora:** `02:00:00` (2:00 AM)
+   - **Repetir cada:** `1 días`
+   - **Acción:** Selecciona **"Iniciar un programa"**
+   - **Programa:** `C:\reservaulasltic\backup_diario.bat`
+   - **Iniciar en:** `C:\reservaulasltic\`
+4. En la última pantalla, marca: ✅ **"Abrir el cuadro de diálogo Propiedades"**
+5. Click en **Finalizar**
+6. En la ventana de Propiedades que se abre:
+   - Pestaña **"General"**: Marca ✅ **"Ejecutar tanto si el usuario inició sesión como si no"**
+   - Pestaña **"Configuración"**: Marca ✅ **"Ejecutar la tarea lo antes posible después de un inicio programado perdido"**
+7. Click en **Aceptar**
+
+#### 5. Verificar que funciona
+
+Para probar sin esperar hasta las 2 AM:
+
+1. En el Programador de tareas, busca tu tarea "Backup Diario Base de Datos"
+2. Clic derecho → **"Ejecutar"**
+3. Espera 10 segundos
+4. Abre `C:\backups\` y verifica que se creó un nuevo archivo .sql
+
+**💡 Consejo:** Los backups ocupan espacio. Cada mes, elimina backups antiguos para liberar espacio.
+
+### Restaurar un Backup
+
+```cmd
+set PGPASSWORD=12345
+"C:\Program Files\PostgreSQL\16\bin\psql.exe" -U reservas_user -d reservaulasltic < "C:\backups\reservas_20250127.sql"
+```
+
+---
+
+## 🔧 Comandos Útiles
+
+```cmd
 # Ver IP del servidor
-ipconfig  # Windows
-ifconfig  # Linux/macOS
+ipconfig
+
+# Activar entorno virtual
+cd C:\reservaulasltic
+venv\Scripts\activate
+
+# Iniciar servidor manualmente
+python manage.py runserver 0.0.0.0:8000
+
+# Crear nuevo usuario
+python manage.py createsuperuser
+
+# Aplicar cambios a la base de datos (después de modificar modelos)
+python manage.py makemigrations
+python manage.py migrate
+
+# Limpiar sesiones antiguas (hacer cada mes)
+python manage.py clearsessions
 ```
 
 ---
 
-## 📝 Notas Importantes
+## ❓ Solución de Problemas
 
-- ✅ PostgreSQL soporta múltiples usuarios concurrentes
-- ✅ Los cambios se reflejan en tiempo real para todos los usuarios
-- ⚠️ Asegúrate de que todos los PCs estén en la misma red local
-- ⚠️ Anota la IP del servidor para que los clientes puedan conectarse
-- 🔒 Cambia las contraseñas por defecto en producción
+### El servidor no inicia automáticamente
 
----
+1. Verifica que el script `iniciar_servidor.bat` existe en `C:\reservaulasltic\`
+2. Abre el Programador de tareas y revisa que la tarea esté ahí
+3. Prueba ejecutar `iniciar_servidor.bat` manualmente a ver si funciona
 
-## 🐛 Solución de Problemas
+### No puedo conectarme desde otro PC
+
+**Paso 1:** Verifica que el servidor esté corriendo
+- En el servidor, abre `http://localhost:8000` - ¿Funciona?
+
+**Paso 2:** Verifica la IP del servidor
+- En el servidor: `ipconfig` - Anota la IP
+
+**Paso 3:** Prueba el ping
+- Desde la PC cliente, abre CMD:
+  ```cmd
+  ping 192.168.1.100
+  ```
+  (Usa la IP de tu servidor)
+- Si dice "Tiempo de espera agotado" → problema de red
+- Si responde → el servidor está accesible
+
+**Paso 4:** Verifica el firewall
+- Ejecuta de nuevo (como admin):
+  ```cmd
+  netsh advfirewall firewall add rule name="Django Server LTIC" dir=in action=allow protocol=TCP localport=8000
+  ```
+
+**Paso 5:** Verifica que PostgreSQL acepte conexiones externas
+- `postgresql.conf` debe tener: `listen_addresses = '*'`
+- `pg_hba.conf` debe tener la línea que agregamos
+- Reinicia el servicio PostgreSQL
 
 ### Error: "No module named 'psycopg2'"
-```bash
+
+```cmd
+cd C:\reservaulasltic
+venv\Scripts\activate
 pip install psycopg2-binary
 ```
 
 ### Error: "FATAL: password authentication failed"
-- Verifica usuario y contraseña en `settings.py`
-- Confirma que la base de datos y usuario existen en PostgreSQL
 
-### No se puede conectar desde otro PC
-1. Verifica que el servidor esté corriendo con `0.0.0.0:8000`
-2. Revisa que el firewall permita el puerto 8000
-3. Confirma que estén en la misma red con `ping IP_DEL_SERVIDOR`
+La contraseña en `settings.py` no coincide con PostgreSQL.
 
-### Puerto 8000 en uso
-```bash
-# Usa otro puerto
-python manage.py runserver 0.0.0.0:8080
+1. Cambia la contraseña en PostgreSQL:
+   ```sql
+   ALTER USER reservas_user WITH PASSWORD '12345';
+   ```
+
+2. Verifica que `settings.py` tenga la misma contraseña
+
+### Puerto 8000 ya está en uso
+
+Alguien más está usando el puerto. Usa otro:
+
+```cmd
+python manage.py runserver 0.0.0.0:8001
 ```
+
+(Recuerda actualizar el firewall para el puerto 8001)
+
+### El sistema está muy lento con muchos usuarios
+
+1. Aumenta memoria de PostgreSQL:
+   - Edita `postgresql.conf`:
+   ```conf
+   shared_buffers = 256MB
+   max_connections = 100
+   ```
+   - Reinicia PostgreSQL
+
+2. Limpia sesiones antiguas:
+   ```cmd
+   python manage.py clearsessions
+   ```
 
 ---
 
-## 👤 Autor
+## 📋 Checklist de Instalación
 
-Desarrollado para la gestión de aulas en instituciones educativas.
+- [ ] Python instalado (con PATH)
+- [ ] PostgreSQL instalado
+- [ ] Base de datos `reservaulasltic` creada
+- [ ] Usuario `reservas_user` creado en PostgreSQL
+- [ ] Proyecto copiado a `C:\reservaulasltic\`
+- [ ] Entorno virtual creado (`venv`)
+- [ ] Dependencias instaladas (`pip install -r requirements.txt`)
+- [ ] Migraciones aplicadas (`python manage.py migrate`)
+- [ ] Superusuario creado (`python manage.py createsuperuser`)
+- [ ] Firewall configurado (puerto 8000)
+- [ ] PostgreSQL acepta conexiones de red (`postgresql.conf` y `pg_hba.conf`)
+- [ ] PostgreSQL reiniciado
+- [ ] Script `iniciar_servidor.bat` creado
+- [ ] Auto-inicio configurado (carpeta de inicio o Programador de tareas)
+- [ ] IP del servidor anotada
+- [ ] Backup automático configurado
+- [ ] Probado desde el servidor (`http://localhost:8000`)
+- [ ] Probado desde otra PC (`http://IP_SERVIDOR:8000`)
 
-## 📄 Licencia
+---
 
-Este proyecto es de uso interno educativo.
+## 📱 Acceso Rápido
+
+**Desde el servidor:**
+```
+http://localhost:8000
+http://localhost:8000/admin
+```
+
+**Desde PCs clientes:**
+```
+http://192.168.1.XXX:8000
+http://192.168.1.XXX:8000/admin
+```
+(Reemplaza XXX con la IP del servidor)
+
+---
+
+## 🎯 Resumen de lo Más Importante
+
+1. **✅ El servidor debe estar SIEMPRE encendido** para que los demás puedan acceder
+2. **✅ Usa el script `iniciar_servidor.bat`** para no tener que iniciar manualmente
+3. **✅ Cada persona debe tener su propia cuenta** (no compartir contraseñas)
+4. **✅ Haz backups regulares** de la base de datos (con el script automático)
+5. **✅ Todos los cambios se sincronizan automáticamente** entre todos los usuarios
+6. **✅ Si cambias la IP del servidor**, avisa a todos los usuarios
+
+---
+
+## 📞 Soporte
+
+Si tienes problemas:
+
+1. Revisa la sección de "Solución de Problemas" arriba
+2. Verifica el checklist de instalación
+3. Revisa los logs del servidor en la ventana de CMD
+
+---
+
