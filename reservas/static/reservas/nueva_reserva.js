@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* =========================
        AGENDA POR AULA (DRAWER)
-       ¡Con colores mejorados!
+       ¡Con colores mejorados y BOTÓN EDITAR!
     ========================= */
     const drawer = document.getElementById('agenda-drawer');
     const agendaLista = document.getElementById('agenda-lista');
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 const response = await fetch(
-                    `/reservas/api/agenda-aula/?aula=${aulaId}&fecha=${fecha}`
+                    `/reservas/api/agenda-aula/?aula_id=${aulaId}&fecha=${fecha}`
                 );
 
                 if (!response.ok) throw new Error();
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 agendaLista.innerHTML = '';
                 agendaInfo.innerText = `Aula ${aulaNumero} · ${fecha}`;
 
-                if (data.length === 0) {
+                if (data.reservas.length === 0) {
                     agendaLista.innerHTML = `
                         <div class="p-3 rounded-xl bg-white/5 border border-white/10 text-gray-400">
                             No hay reservas para esta fecha
@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     `;
                 }
 
-                data.forEach(r => {
+                data.reservas.forEach(r => {
                     // COLORES MEJORADOS - Ahora el verde/azul se notan MUCHO más
                     let gradient, borderColor, horaColor, bgBase, iconColor;
 
@@ -108,13 +108,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     // Icono según el tipo
                     const icono = r.tipo === 'semestral' 
-                        ? '' 
+                        ? '📅' 
                         : r.tipo === 'ocasional' 
-                            ? '' 
-                            : '';
+                            ? '✅' 
+                            : '📌';
+
+                    // 🔥 NUEVO: Generar URL para editar en lista_reservas
+                    let editUrl;
+                    if (r.tipo === 'semestral' && r.grupo_padre_id) {
+                        // Si es semestral, usar el grupo_padre_id para ir al padre
+                        editUrl = `/reservas/lista/?tipo=semestral&reserva_id=${r.grupo_padre_id}&edit=true`;
+                    } else if (r.tipo === 'ocasional') {
+                        // Si es ocasional, usar el ID de la reserva directamente
+                        editUrl = `/reservas/lista/?tipo=ocasional&reserva_id=${r.id}&edit=true`;
+                    }
 
                     agendaLista.innerHTML += `
-                        <div class="relative p-1 rounded-xl bg-gradient-to-br ${gradient} 
+                        <div class="relative p-4 rounded-xl bg-gradient-to-br ${gradient} 
                                     border-2 border-${borderColor} shadow-lg overflow-hidden
                                     hover:shadow-xl transition-all duration-200">
                             
@@ -124,21 +134,34 @@ document.addEventListener('DOMContentLoaded', () => {
                             
                             <!-- Contenido -->
                             <div class="relative z-10">
-                                <!-- Badge del tipo -->
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-xs font-semibold px-2 py-0.5 rounded-lg ${bgBase} 
+                                <!-- Header con badge y botón editar -->
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="text-xs font-semibold px-2.5 py-1 rounded-lg ${bgBase} 
                                                 border border-${borderColor} ${horaColor}">
                                         ${icono} ${r.tipo === 'semestral' ? 'Semestral' : 'Ocasional'}
                                     </span>
+                                    
+                                    ${editUrl ? `
+                                        <a href="${editUrl}" 
+                                           class="btn btn-xs gap-1 ${r.tipo === 'semestral' ? 'btn-info' : 'btn-success'} 
+                                                  hover:scale-105 transition-transform"
+                                           title="Editar en lista de reservas">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                            </svg>
+                                            Editar
+                                        </a>
+                                    ` : ''}
                                 </div>
                                 
                                 <!-- Hora -->
-                                <p class="text-sm font-bold ${horaColor} mb-1 flex items-center gap-2">
+                                <p class="text-sm font-bold ${horaColor} mb-2 flex items-center gap-2">
                                     <svg class="w-4 h-4 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                                               d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
-                                    ${r.inicio} — ${r.fin}
+                                    ${r.hora_inicio} — ${r.hora_fin}
                                 </p>
                                 
                                 <!-- Cátedra -->
@@ -195,55 +218,65 @@ document.addEventListener('DOMContentLoaded', () => {
     ========================= */
     const buscadorCatedra = document.getElementById('buscador-catedra');
     const listaCatedras = document.getElementById('lista-catedras');
-    const inputCatedra = document.getElementById('catedra-seleccionada');
+    const catedraSeleccionada = document.getElementById('catedra-seleccionada');
 
     if (buscadorCatedra) {
-        const items = listaCatedras.querySelectorAll('.catedra-item');
+        const itemsCatedra = document.querySelectorAll('.catedra-item');
 
+        // Mostrar al enfocar
         buscadorCatedra.addEventListener('focus', () => {
             listaCatedras.classList.remove('hidden');
         });
 
+        // Ocultar al hacer clic fuera
+        document.addEventListener('click', (e) => {
+            if (!buscadorCatedra.contains(e.target) && !listaCatedras.contains(e.target)) {
+                listaCatedras.classList.add('hidden');
+            }
+        });
+
+        // Filtrar al escribir
         buscadorCatedra.addEventListener('input', () => {
             const texto = buscadorCatedra.value.toLowerCase();
-            listaCatedras.classList.remove('hidden');
 
-            items.forEach(item => {
+            itemsCatedra.forEach(item => {
                 const nombre = item.innerText.toLowerCase();
                 item.style.display = nombre.includes(texto) ? 'block' : 'none';
             });
-        });
 
-        items.forEach(item => {
-            item.addEventListener('click', () => {
-                buscadorCatedra.value = item.innerText;
-                inputCatedra.value = item.dataset.id;
-                listaCatedras.classList.add('hidden');
-            });
-        });
-
-        // cerrar al hacer click fuera
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('#buscador-catedra') &&
-                !e.target.closest('#lista-catedras')) {
-                listaCatedras.classList.add('hidden');
+            // Si no hay texto, mostrar todas
+            if (texto === '') {
+                itemsCatedra.forEach(item => item.style.display = 'block');
             }
+        });
+
+        // Seleccionar al hacer clic
+        itemsCatedra.forEach(item => {
+            item.addEventListener('click', () => {
+                const nombre = item.innerText.trim();
+                const id = item.dataset.id;
+
+                buscadorCatedra.value = nombre;
+                catedraSeleccionada.value = id;
+
+                listaCatedras.classList.add('hidden');
+
+                // Marcar como activo visualmente
+                itemsCatedra.forEach(i => i.classList.remove('bg-white/20', 'font-medium'));
+                item.classList.add('bg-white/20', 'font-medium');
+            });
         });
     }
 
     /* =========================
-       TIME PICKER
+       TIME PICKER PERSONALIZADO
     ========================= */
     function crearTimePicker(inputId, pickerId) {
-        const input  = document.getElementById(inputId);
+        const input = document.getElementById(inputId);
         const picker = document.getElementById(pickerId);
 
-        if (!input || !picker) {
-            console.warn(`No se encontró ${inputId} o ${pickerId}`);
-            return;
-        }
+        if (!input || !picker) return;
 
-        // Asegurarse de que empiece oculto
         picker.classList.add('hidden');
         picker.style.display = 'none';
 

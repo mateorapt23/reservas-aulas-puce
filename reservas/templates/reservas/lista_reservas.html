@@ -13,9 +13,11 @@
     </div>
 
     {% csrf_token %}
-    <!-- Buscador -->
-    <form method="get" id="form-busqueda" class="mb-4 flex items-center gap-4">
+    <!-- Buscador y Filtros -->
+    <form method="get" id="form-busqueda" class="mb-4 flex items-center gap-4 flex-wrap">
         <input type="hidden" name="tipo" value="{{ tipo_actual }}">
+        
+        <!-- Buscador de texto -->
         <div class="relative w-full max-w-md">
             <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
             <input type="text" id="buscador" name="q" value="{{ q }}"
@@ -23,10 +25,28 @@
                    class="input input-sm w-full pl-10 bg-[#0f172a] border-white/10 text-white">
         </div>
         
+        <!-- Botón eliminar -->
         <button id="btn-eliminar-seleccionadas" class="btn btn-error btn-sm" type="button" disabled>
             Eliminar seleccionadas
         </button>
+
+        <!-- Filtro por semana -->
+        <div class="flex items-center gap-2">
+            <label class="text-gray-300 text-sm">Filtrar por semana:</label>
+            <input type="date" id="filtro-semana" name="semana" value="{{ semana_filtro }}"
+                   class="input input-sm bg-[#0f172a] border-white/10 text-white">
+            <button type="button" id="btn-limpiar-semana" class="btn btn-sm btn-ghost" title="Limpiar filtro">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
     </form>
+
+    <!-- Info semana -->
+    <div id="info-semana" class="text-gray-400 text-sm mb-4 hidden">
+        <i data-lucide="calendar" class="w-4 h-4 inline"></i>
+        Mostrando semana del <span id="fecha-inicio-semana" class="text-white font-medium"></span> 
+        al <span id="fecha-fin-semana" class="text-white font-medium"></span>
+    </div>
 
     <!-- Tabla -->
     <div id="tabla-container" class="overflow-x-auto rounded-xl border border-white/10">
@@ -52,7 +72,8 @@
             return "{% url 'reservas:update_reserva' 0 %}".replace('/0/', '/' + id + '/');
         },
         deleteReservas: "{% url 'reservas:delete_reservas' %}",
-        listaReservas: "{% url 'reservas:lista_reservas' %}"
+        listaReservas: "{% url 'reservas:lista_reservas' %}",
+        updateGrupoSemestral: "{% url 'reservas:update_grupo_semestral' %}"
     };
     window.CSRF_TOKEN = "{{ csrf_token }}";
     

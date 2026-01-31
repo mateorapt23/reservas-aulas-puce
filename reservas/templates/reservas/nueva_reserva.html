@@ -32,8 +32,8 @@
                 <form method="POST" class="space-y-4" action="#resultados">
                     {% csrf_token %}
 
-                    <!-- Primera fila: Docente + Cátedra (más ancha) -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Primera fila: Docente + Cátedra + Capacidad -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <!-- DOCENTE -->
                         <div>
                             <label class="label pb-1">
@@ -91,6 +91,19 @@
                                     </div>
                                 {% endfor %}
                             </div>
+                        </div>
+
+                        <!-- CAPACIDAD (opcional) -->
+                        <div>
+                            <label class="label pb-1">
+                                <span class="label-text text-gray-300">Capacidad <span class="text-gray-500">(opcional)</span></span>
+                            </label>
+                            <input type="number"
+                                name="capacidad"
+                                min="1"
+                                value="{{ request.POST.capacidad }}"
+                                placeholder="Ej. 30"
+                                class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white text-base"/>
                         </div>
                     </div>
 
@@ -224,6 +237,7 @@
                             <input type="date"
                                    name="fin_semestre"
                                    id="fin_semestre"
+                                   min="{% now 'Y-m-d' %}"
                                    value="{{ request.POST.fin_semestre }}"
                                    class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white text-base mt-1"/>
                         </div>
@@ -248,6 +262,17 @@
                     Aulas sugeridas
                 </h2>
 
+                {% if mostrar_aviso_ninguno %}
+                <div class="mb-4 flex items-start gap-3 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3">
+                    <svg class="w-5 h-5 text-red-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9.303 3.376a12 12 0 11-15.094-5.573M11.25 5.25h.008v.008H11.25V5.25z"/>
+                    </svg>
+                    <p class="text-sm text-red-300">
+                        Ninguna aula tiene los requerimientos solicitados. Las aulas mostradas no coinciden con ninguno — cualquier aula se puede alimentar de este/estos requerimientos.
+                    </p>
+                </div>
+                {% endif %}
+
                 <div class="space-y-4">
 
                     {% for aula in aulas %}
@@ -269,6 +294,8 @@
                                     <span class="badge badge-info badge-sm">🔵 Algunos requerimientos ({{ aula.coincidencias }}/{{ req_seleccionados|length }})</span>
                                 {% elif aula.sin_requerimientos %}
                                     <span class="badge badge-warning badge-sm">⚡ Disponible para alimentarse</span>
+                                {% elif aula.ninguno_coincide %}
+                                    <span class="badge badge-error badge-sm">⚠ Ninguno coincide</span>
                                 {% endif %}
                             </div>
 

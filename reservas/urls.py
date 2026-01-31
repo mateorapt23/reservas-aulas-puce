@@ -11,4 +11,5 @@ urlpatterns = [
     path('lista/', login_required(views.lista_reservas), name='lista_reservas'),
     path('update/<int:id>/', login_required(views.update_reserva), name='update_reserva'),
     path('delete/', login_required(views.delete_reservas), name='delete_reservas'),
+    path('update-grupo-semestral/', login_required(views.update_grupo_semestral), name='update_grupo_semestral'),
 ]
