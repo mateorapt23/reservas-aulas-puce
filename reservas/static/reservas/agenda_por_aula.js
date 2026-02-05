@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="reserva-normal">
                                 <div class="font-bold">${r.docente}</div>
                                 <div>${r.catedra}</div>
-                                <div style="font-size: 10px; opacity: 0.8;">${r.requerimientos.join(', ')}</div>
+                                <div style="font-size: 10px; background: rgba(255, 255, 255, 0.15); padding: 3px 5px; border-radius: 3px; margin-top: 4px; font-weight: 500;">${r.requerimientos.join(', ')}</div>
                             </div>
                         `;
                     }

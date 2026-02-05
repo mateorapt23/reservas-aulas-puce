@@ -200,43 +200,40 @@
                         </div>
                     </div>
 
-                    <!-- TIPO + FIN SEMESTRE -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <!-- TIPO -->
-                        <div>
-                            <label class="label pb-3">
-                                <span class="label-text text-gray-300">Tipo de reserva</span>
+                    <!-- TIPO DE RESERVA -->
+                    <div>
+                        <label class="label pb-1">
+                            <span class="label-text text-gray-300">Tipo de reserva</span>
+                        </label>
+
+                        <div class="flex gap-6">
+                            <label class="flex items-center gap-2 text-gray-300 cursor-pointer">
+                                <input type="radio"
+                                       name="tipo"
+                                       value="ocasional"
+                                       class="radio radio-primary"
+                                       {% if request.POST.tipo == "ocasional" or not request.POST.tipo %}checked{% endif %}>
+                                <span>Ocasional (una vez)</span>
                             </label>
-                            <div class="flex flex-col gap-3">
-                                <label class="flex items-center gap-2 text-gray-300 cursor-pointer">
-                                    <input type="radio"
-                                           name="tipo"
-                                           value="ocasional"
-                                           required
-                                           {% if request.POST.tipo == 'ocasional' %}checked{% endif %}
-                                           class="radio radio-primary">
-                                    <span>Ocasional (una sola fecha)</span>
-                                </label>
-                                <label class="flex items-center gap-2 text-gray-300 cursor-pointer">
-                                    <input type="radio"
-                                           name="tipo"
-                                           value="semestral"
-                                           required
-                                           {% if request.POST.tipo == 'semestral' %}checked{% endif %}
-                                           class="radio radio-primary">
-                                    <span>Semestral (repite cada semana)</span>
-                                </label>
-                            </div>
+
+                            <label class="flex items-center gap-2 text-gray-300 cursor-pointer">
+                                <input type="radio"
+                                       name="tipo"
+                                       value="semestral"
+                                       class="radio radio-primary"
+                                       {% if request.POST.tipo == "semestral" %}checked{% endif %}>
+                                <span>Semestral (cada semana)</span>
+                            </label>
                         </div>
 
-                        <!-- FIN SEMESTRE -->
-                        <div id="fin-semestre-wrapper">
-                            <label class="label pb-2">
-                                <span class="label-text text-gray-300">Fecha de fin (solo si es semestral)</span>
+                        <div id="fin-semestre-wrapper" class="mt-4 opacity-60">
+                            <label class="label pb-1">
+                                <span class="label-text text-gray-300">Fecha fin del semestre</span>
                             </label>
                             <input type="date"
                                    name="fin_semestre"
                                    id="fin_semestre"
+                                   disabled
                                    min="{% now 'Y-m-d' %}"
                                    value="{{ request.POST.fin_semestre }}"
                                    class="input input-bordered w-full bg-[#0f172a] border-white/10 text-white text-base mt-1"/>
@@ -259,26 +256,17 @@
             {% if aulas %}
             <div id="resultados" class="mt-10">
                 <h2 class="text-lg font-semibold text-white mb-4">
-                    Aulas sugeridas
+                    Aulas disponibles
                 </h2>
-
-                {% if mostrar_aviso_ninguno %}
-                <div class="mb-4 flex items-start gap-3 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3">
-                    <svg class="w-5 h-5 text-red-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9.303 3.376a12 12 0 11-15.094-5.573M11.25 5.25h.008v.008H11.25V5.25z"/>
-                    </svg>
-                    <p class="text-sm text-red-300">
-                        Ninguna aula tiene los requerimientos solicitados. Las aulas mostradas no coinciden con ninguno — cualquier aula se puede alimentar de este/estos requerimientos.
-                    </p>
-                </div>
-                {% endif %}
 
                 <div class="space-y-4">
 
                     {% for aula in aulas %}
 
                     <div class="bg-[#020617] rounded-2xl p-6 flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-8
-                              border border-white/10 hover:border-white/20 transition">
+                              border border-white/10 hover:border-white/20 transition
+                              {% if aula.ninguno_coincide %}border-red-500/30 bg-red-500/5{% endif %}
+                              {% if aula.completamente_llena %}border-orange-500/30 bg-orange-500/5{% endif %}">
 
                         <!-- INFO -->
                         <div class="flex-1 space-y-2">
@@ -287,7 +275,7 @@
                                     Aula {{ aula.numero }}
                                 </h3>
                                 
-                                <!-- BADGES DE COINCIDENCIA -->
+                                <!-- 🔥 BADGES DE COINCIDENCIA CON ORDEN DE PRIORIDAD -->
                                 {% if aula.tiene_todos %}
                                     <span class="badge badge-success badge-sm">✓ Todos los requerimientos</span>
                                 {% elif aula.tiene_algunos %}
@@ -295,7 +283,7 @@
                                 {% elif aula.sin_requerimientos %}
                                     <span class="badge badge-warning badge-sm">⚡ Disponible para alimentarse</span>
                                 {% elif aula.ninguno_coincide %}
-                                    <span class="badge badge-error badge-sm">⚠ Ninguno coincide</span>
+                                    <span class="badge badge-error badge-sm">⚠ Ningún requerimiento coincide</span>
                                 {% endif %}
                             </div>
 
@@ -317,9 +305,37 @@
                                 </span>
                             </p>
 
+                            <!-- 🔥 MENSAJE EN ROJO para aulas con ninguno_coincide -->
+                            {% if aula.ninguno_coincide %}
+                                <div class="flex items-start gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2 mt-2">
+                                    <svg class="w-4 h-4 text-red-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                    </svg>
+                                    <p class="text-xs text-red-300">
+                                        Esta aula tiene requerimientos instalados, pero ninguno coincide con los solicitados. Igualmente se puede reservar y alimentar con los requerimientos solicitados.
+                                    </p>
+                                </div>
+                            {% endif %}
+
+                            <!-- 🔥 MENSAJE NARANJA para aulas completamente llenas -->
+                            {% if aula.completamente_llena %}
+                                <div class="flex items-start gap-2 bg-orange-500/10 border border-orange-500/30 rounded-lg px-3 py-2 mt-2">
+                                    <svg class="w-4 h-4 text-orange-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <p class="text-xs text-orange-300">
+                                        Esta aula está completamente llena para la fecha seleccionada (todas las horas ocupadas de 7:00 AM a 9:00 PM). No se puede reservar en esta fecha.
+                                    </p>
+                                </div>
+                            {% endif %}
+
                             {% if aula.choque %}
                                 <span class="inline-flex items-center gap-2 text-sm text-red-400 mt-2">
                                     ❌ Choque de horario ({{ request.POST.hora_inicio }} — {{ request.POST.hora_fin }})
+                                </span>
+                            {% elif aula.completamente_llena %}
+                                <span class="inline-flex items-center gap-2 text-sm text-orange-400 mt-2">
+                                    🚫 Aula completamente ocupada este día
                                 </span>
                             {% else %}
                                 <span class="inline-flex items-center gap-2 text-sm text-green-400 mt-2">
@@ -347,14 +363,16 @@
                                 <input type="hidden" name="tipo" value="{{ request.POST.tipo }}">
                                 <input type="hidden" name="fin_semestre" value="{{ request.POST.fin_semestre }}">
 
+                                <!-- 🔥 IMPORTANTE: Los requerimientos seleccionados se envían siempalgebra -->
                                 {% for req in req_seleccionados %}
                                     <input type="hidden" name="requerimientos" value="{{ req }}">
                                 {% endfor %}
 
                                 <input type="hidden" name="aula_id" value="{{ aula.id }}">
 
+                                <!-- 🔥 Deshabilitar botón si hay choque O si está completamente llena -->
                                 <button type="submit" class="btn btn-primary btn-sm btn-reservar"
-                                        {% if aula.choque %}disabled{% endif %}
+                                        {% if aula.choque or aula.completamente_llena %}disabled{% endif %}
                                         data-aula-numero="{{ aula.numero }}">
                                     Reservar esta aula
                                 </button>
@@ -370,7 +388,7 @@
             <!-- PLACEHOLDER ANTES DE BUSCAR -->
             <div class="mt-10">
                 <h2 class="text-lg font-semibold text-white mb-4">
-                    Aulas sugeridas
+                    Aulas disponibles
                 </h2>
 
                 <div class="bg-[#020617] rounded-2xl p-6 text-gray-400 text-sm text-center">

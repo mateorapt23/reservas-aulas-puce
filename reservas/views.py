@@ -40,20 +40,19 @@ def nueva_reserva(request):
         req_ids = request.POST.getlist('requerimientos')
         capacidad_filtro = request.POST.get('capacidad', '').strip()
 
-        # LÓGICA DE FILTRADO
+        # 🔥 NUEVA LÓGICA: MOSTRAR TODAS LAS AULAS, ORDENADAS POR PRIORIDAD
         todas_las_aulas = Aula.objects.all()
-        mostrar_aviso_ninguno = False
         
         if req_ids:
-            aulas_validas = []       # tienen todos, algunos o están vacías
-            aulas_ninguno = []       # tienen reqs pero ninguno coincide (fallback)
             reqs_solicitados = set(int(req_id) for req_id in req_ids)
             
+            # Procesar TODAS las aulas y clasificarlas
             for aula in todas_las_aulas:
                 reqs_del_aula = set(aula.requerimientos.values_list('id', flat=True))
                 coincidencias = len(reqs_del_aula.intersection(reqs_solicitados))
                 total_reqs_aula = len(reqs_del_aula)
                 
+                # Verificar choque de horario
                 choque = Reserva.objects.filter(
                     aula=aula,
                     fecha=fecha,
@@ -61,35 +60,57 @@ def nueva_reserva(request):
                     hora_fin__gt=hora_inicio
                 ).exists()
                 
+                # 🔥 VERIFICAR SI EL AULA ESTÁ COMPLETAMENTE LLENA EN ESA FECHA
+                # Obtener todas las reservas del aula en esa fecha
+                reservas_del_dia = Reserva.objects.filter(
+                    aula=aula,
+                    fecha=fecha
+                ).order_by('hora_inicio')
+                
+                # Calcular tiempo total ocupado
+                tiempo_ocupado_minutos = 0
+                for reserva in reservas_del_dia:
+                    # Convertir horas a minutos desde medianoche
+                    inicio_mins = reserva.hora_inicio.hour * 60 + reserva.hora_inicio.minute
+                    fin_mins = reserva.hora_fin.hour * 60 + reserva.hora_fin.minute
+                    tiempo_ocupado_minutos += (fin_mins - inicio_mins)
+                
+                # Horario disponible: 7:00 (420 min) a 21:00 (1260 min) = 840 minutos total (14 horas)
+                tiempo_total_disponible = 840  # 14 horas * 60 minutos
+                aula.completamente_llena = tiempo_ocupado_minutos >= tiempo_total_disponible
+                
+                # Clasificar el aula
                 aula.choque = choque
                 aula.coincidencias = coincidencias
-                aula.tiene_todos = coincidencias == len(reqs_solicitados)
+                aula.tiene_todos = coincidencias == len(reqs_solicitados) and len(reqs_solicitados) > 0
                 aula.tiene_algunos = coincidencias > 0 and not aula.tiene_todos
                 aula.sin_requerimientos = total_reqs_aula == 0
                 aula.ninguno_coincide = total_reqs_aula > 0 and coincidencias == 0
                 
-                if coincidencias > 0 or total_reqs_aula == 0:
-                    aulas_validas.append(aula)
-                elif total_reqs_aula > 0 and coincidencias == 0:
-                    aulas_ninguno.append(aula)
+                # 🔥 AGREGAR TODAS LAS AULAS (sin filtrar ninguna)
+                aulas_filtradas.append(aula)
             
-            # Si no hay aulas válidas, usar fallback de "ninguno coincide"
-            if not aulas_validas and aulas_ninguno:
-                aulas_validas = aulas_ninguno
-                mostrar_aviso_ninguno = True
-            
-            # Ordenar según prioridad
+            # 🔥 ORDENAR SEGÚN PRIORIDAD (MEJORADO)
             def sort_key(a):
+                # Prioridad 1: Tiene TODOS los requerimientos
                 if a.tiene_todos:
                     req_priority = 0
+                    coincidencias_negativas = 0  # No importa el número
+                # Prioridad 2: Tiene ALGUNOS requerimientos (MAYOR A MENOR)
                 elif a.tiene_algunos:
                     req_priority = 1
+                    # Negativo para ordenar de MAYOR a MENOR
+                    coincidencias_negativas = -a.coincidencias
+                # Prioridad 3: NO tiene requerimientos (aula vacía)
                 elif a.sin_requerimientos:
                     req_priority = 2
-                else:
-                    req_priority = 3  # ninguno coincide (fallback)
+                    coincidencias_negativas = 0
+                # Prioridad 4: Tiene requerimientos pero NINGUNO coincide
+                else:  # a.ninguno_coincide
+                    req_priority = 3
+                    coincidencias_negativas = 0
                 
-                # Capacidad: si se proporcionó, usar diferencia absoluta como 2da prioridad
+                # Segunda prioridad: Capacidad (si se especificó)
                 if capacidad_filtro:
                     try:
                         cap_pedida = int(capacidad_filtro)
@@ -100,9 +121,11 @@ def nueva_reserva(request):
                 else:
                     cap_diff = 0
                 
-                return (req_priority, cap_diff, a.choque)
+                # Tercera prioridad: Sin choque primero
+                return (req_priority, coincidencias_negativas, cap_diff, a.choque)
             
-            aulas_filtradas = sorted(aulas_validas, key=sort_key)
+            aulas_filtradas = sorted(aulas_filtradas, key=sort_key)
+            
         else:
             # Sin requerimientos, mostrar todas las aulas
             for aula in todas_las_aulas:
@@ -112,6 +135,21 @@ def nueva_reserva(request):
                     hora_inicio__lt=hora_fin,
                     hora_fin__gt=hora_inicio
                 ).exists()
+                
+                # 🔥 VERIFICAR SI EL AULA ESTÁ COMPLETAMENTE LLENA
+                reservas_del_dia = Reserva.objects.filter(
+                    aula=aula,
+                    fecha=fecha
+                ).order_by('hora_inicio')
+                
+                tiempo_ocupado_minutos = 0
+                for reserva in reservas_del_dia:
+                    inicio_mins = reserva.hora_inicio.hour * 60 + reserva.hora_inicio.minute
+                    fin_mins = reserva.hora_fin.hour * 60 + reserva.hora_fin.minute
+                    tiempo_ocupado_minutos += (fin_mins - inicio_mins)
+                
+                tiempo_total_disponible = 840
+                aula.completamente_llena = tiempo_ocupado_minutos >= tiempo_total_disponible
                 
                 aula.choque = choque
                 aula.coincidencias = 0
@@ -146,7 +184,6 @@ def nueva_reserva(request):
         'reservas_aula': reservas_aula,
         'req_seleccionados': req_ids,
         'horas': horas,
-        'mostrar_aviso_ninguno': mostrar_aviso_ninguno if request.method == "POST" else False,
     }
 
     return render(request, 'reservas/nueva_reserva.html', context)
