@@ -6,18 +6,6 @@ Sistema web para gestionar reservas de aulas, cátedras y requerimientos en una 
 
 ---
 
-## 📦 Archivos Incluidos
-
-Este proyecto incluye los siguientes archivos de configuración listos para usar:
-
-- ✅ **`requirements.txt`** - Lista de dependencias de Python
-- ✅ **`iniciar_servidor.bat`** - Script para iniciar el servidor automáticamente
-- ✅ **`backup_diario.bat`** - Script para realizar backups automáticos de la base de datos
-
-**💡 Nota:** Solo copia estos archivos a la carpeta `C:\reservaulasltic\` y sigue las instrucciones. No necesitas crearlos manualmente (aunque también te explico cómo si quieres hacerlo).
-
----
-
 ## 📋 Requisitos Previos
 
 - Windows 10/11 (para el servidor)
