@@ -88,6 +88,11 @@
             {% for a in aulas %}
             {id: {{ a.id }}, numero: "{{ a.numero|escapejs }}"},
             {% endfor %}
+        ],
+        requerimientos: [  // ✅ NUEVO: Agregar requerimientos
+            {% for r in requerimientos %}
+            {id: {{ r.id }}, nombre: "{{ r.nombre|escapejs }}"},
+            {% endfor %}
         ]
     };
 </script>

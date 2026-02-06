@@ -84,6 +84,11 @@ document.addEventListener('DOMContentLoaded', function() {
         fechaInicio.textContent = formatearFecha(fechasSemana[0]);
         fechaFin.textContent = formatearFecha(fechasSemana[5]);
         infoSemana.classList.remove('hidden');
+        
+        // ✅ Reinicializar iconos de Lucide después de mostrar
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
 
         // Cargar reservas por día
         const promesas = fechasSemana.map(fecha => {
@@ -124,12 +129,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     div.style.top = ((inicioDecimal - 7) * 60) + 'px';
                     div.style.height = (duracionHoras * 60 - 1) + 'px';
 
+                    // ✅ SOLUCIÓN: Solo mostrar requerimientos si existen
+                    const requerimientosHTML = r.requerimientos && r.requerimientos.length > 0 
+                        ? `<div class="req">${r.requerimientos.join(', ')}</div>` 
+                        : '';
+
+                    const requerimientosHTMLNormal = r.requerimientos && r.requerimientos.length > 0 
+                        ? `<div style="font-size: 10px; background: rgba(255, 255, 255, 0.15); padding: 3px 5px; border-radius: 3px; margin-top: 4px; font-weight: 500;">${r.requerimientos.join(', ')}</div>` 
+                        : '';
+
                     if (duracionHoras <= 1.5) {
                         div.innerHTML = `
                             <div class="reserva-compacta">
                                 <div class="fila font-bold">${r.docente}</div>
                                 <div class="fila">${r.catedra}</div>
-                                <div class="req">${r.requerimientos.join(', ')}</div>
+                                ${requerimientosHTML}
                             </div>
                         `;
                     } else {
@@ -137,7 +151,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="reserva-normal">
                                 <div class="font-bold">${r.docente}</div>
                                 <div>${r.catedra}</div>
-                                <div style="font-size: 10px; background: rgba(255, 255, 255, 0.15); padding: 3px 5px; border-radius: 3px; margin-top: 4px; font-weight: 500;">${r.requerimientos.join(', ')}</div>
+                                ${requerimientosHTMLNormal}
                             </div>
                         `;
                     }
@@ -150,4 +164,137 @@ document.addEventListener('DOMContentLoaded', function() {
 
     btnFiltrar.addEventListener('click', cargarReservas);
     console.log('✅ Event listener agregado');
+
+    // ✅ FUNCIONALIDAD DE DESCARGA CON HTML-TO-IMAGE
+    const btnDescargar = document.getElementById('btn-descargar');
+    
+    if (btnDescargar) {
+        btnDescargar.addEventListener('click', function() {
+            console.log('🖼️ Botón descargar clickeado');
+            
+            if (typeof htmlToImage === 'undefined') {
+                console.error('❌ htmlToImage no está disponible');
+                alert('Error: La librería de captura de pantalla no se cargó correctamente. Por favor, recarga la página.');
+                return;
+            }
+            
+            const calendarioContainer = document.getElementById('calendario-container');
+            if (!calendarioContainer) {
+                alert('Error: No se encontró el calendario para capturar.');
+                return;
+            }
+            
+            const aulaSeleccionada = document.getElementById('select-aula');
+            const aulaTexto = aulaSeleccionada.options[aulaSeleccionada.selectedIndex].text;
+            const semanaTexto = `${fechaInicio.textContent} al ${fechaFin.textContent}`;
+            
+            console.log('📸 Iniciando captura...', { aulaTexto, semanaTexto });
+            
+            btnDescargar.disabled = true;
+            const textoOriginal = btnDescargar.innerHTML;
+            btnDescargar.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Generando...';
+            
+            // ✅ APLICAR ESTILOS TEMPORALES PARA IMPRESIÓN (TEXTO MÁS GRANDE)
+            const elementosParaAumentar = {
+                '.hora': { fontSize: '14px' }, // Era 11px
+                '.dia-nombre': { fontSize: '16px', fontWeight: '700' }, // Era 13px
+                '.dia-fecha': { fontSize: '13px' }, // Era 11px
+                '.reserva': { fontSize: '13px', padding: '8px' }, // Era 10px y 5px
+                '.reserva .font-bold': { fontSize: '14px' }, // Nombres docentes
+                '.reserva-compacta .fila': { fontSize: '12px', marginBottom: '3px' },
+                '.reserva-compacta .req': { fontSize: '11px' }, // Era 9px
+                '.reserva-normal > div': { fontSize: '13px', marginBottom: '4px' }
+            };
+            
+            // Guardar estilos originales y aplicar nuevos
+            const estilosOriginales = {};
+            Object.keys(elementosParaAumentar).forEach(selector => {
+                const elementos = calendarioContainer.querySelectorAll(selector);
+                estilosOriginales[selector] = [];
+                
+                elementos.forEach((el, index) => {
+                    estilosOriginales[selector][index] = {
+                        fontSize: el.style.fontSize,
+                        padding: el.style.padding,
+                        fontWeight: el.style.fontWeight,
+                        marginBottom: el.style.marginBottom
+                    };
+                    
+                    // Aplicar nuevos estilos
+                    Object.keys(elementosParaAumentar[selector]).forEach(prop => {
+                        el.style[prop] = elementosParaAumentar[selector][prop];
+                    });
+                });
+            });
+            
+            // Esperar un momento para que se apliquen los estilos
+            setTimeout(() => {
+                // ✅ Usar html-to-image con mayor calidad
+                htmlToImage.toPng(calendarioContainer, {
+                    quality: 1.0,
+                    pixelRatio: 3, // Aumentado a 3x para mejor calidad de impresión
+                    backgroundColor: '#1e293b'
+                })
+                .then(function(dataUrl) {
+                    console.log('✅ Imagen generada correctamente');
+                    
+                    // RESTAURAR ESTILOS ORIGINALES
+                    Object.keys(estilosOriginales).forEach(selector => {
+                        const elementos = calendarioContainer.querySelectorAll(selector);
+                        elementos.forEach((el, index) => {
+                            if (estilosOriginales[selector][index]) {
+                                Object.keys(estilosOriginales[selector][index]).forEach(prop => {
+                                    el.style[prop] = estilosOriginales[selector][index][prop];
+                                });
+                            }
+                        });
+                    });
+                    
+                    // Crear enlace de descarga
+                    const link = document.createElement('a');
+                    const nombreArchivo = `Agenda_${aulaTexto.replace(/\s+/g, '_')}_${semanaTexto.replace(/\//g, '-').replace(/\s+/g, '_')}.png`;
+                    link.download = nombreArchivo;
+                    link.href = dataUrl;
+                    link.click();
+                    
+                    console.log('💾 Archivo descargado:', nombreArchivo);
+                    
+                    // Restaurar botón
+                    btnDescargar.disabled = false;
+                    btnDescargar.innerHTML = textoOriginal;
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                    }
+                })
+                .catch(function(error) {
+                    console.error('❌ Error al generar imagen:', error);
+                    
+                    // RESTAURAR ESTILOS ORIGINALES en caso de error
+                    Object.keys(estilosOriginales).forEach(selector => {
+                        const elementos = calendarioContainer.querySelectorAll(selector);
+                        elementos.forEach((el, index) => {
+                            if (estilosOriginales[selector][index]) {
+                                Object.keys(estilosOriginales[selector][index]).forEach(prop => {
+                                    el.style[prop] = estilosOriginales[selector][index][prop];
+                                });
+                            }
+                        });
+                    });
+                    
+                    alert('Error al generar la imagen: ' + error.message + '\n\nIntenta actualizar la página.');
+                    
+                    // Restaurar botón
+                    btnDescargar.disabled = false;
+                    btnDescargar.innerHTML = textoOriginal;
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                    }
+                });
+            }, 200); // Esperar a que se apliquen los estilos
+        });
+        
+        console.log('✅ Event listener de descarga agregado');
+    } else {
+        console.error('❌ No se encontró el botón de descarga');
+    }
 });

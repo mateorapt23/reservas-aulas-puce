@@ -30,10 +30,16 @@
         <button id="btn-filtrar" class="btn btn-primary">Filtrar</button>
     </div>
 
-    <!-- INFO SEMANA -->
-    <div id="info-semana" class="text-gray-400 text-sm hidden">
-        Mostrando semana del <span id="fecha-inicio" class="text-white font-medium"></span> 
-        al <span id="fecha-fin" class="text-white font-medium"></span>
+    <!-- INFO SEMANA CON BOTÓN DE DESCARGA -->
+    <div id="info-semana" class="text-gray-400 text-sm hidden flex items-center gap-3">
+        <span>
+            Mostrando semana del <span id="fecha-inicio" class="text-white font-medium"></span> 
+            al <span id="fecha-fin" class="text-white font-medium"></span>
+        </span>
+        <button id="btn-descargar" class="btn btn-sm btn-success gap-2">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            Descargar Imagen
+        </button>
     </div>
 
     <!-- CONTENEDOR SEMANAL -->
@@ -202,7 +208,27 @@
 
 </style>
 
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- html-to-image para captura de pantalla (mejor soporte para CSS moderno) -->
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js"></script>
+
 <script>
+// Inicializar Lucide Icons
+if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+}
+
+// Verificar que htmlToImage esté cargado
+window.addEventListener('load', function() {
+    if (typeof htmlToImage === 'undefined') {
+        console.error('❌ html-to-image no se cargó correctamente');
+    } else {
+        console.log('✅ html-to-image cargado correctamente');
+    }
+});
+
 // Observar cambios en la sidebar para ajustar el calendario
 document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.getElementById('sidebar');

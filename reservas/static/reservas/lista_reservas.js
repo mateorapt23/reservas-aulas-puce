@@ -208,395 +208,164 @@ document.addEventListener('DOMContentLoaded', function () {
     function restaurarSeleccion() {
         document.querySelectorAll('.select-row, .select-grupo').forEach(cb => {
             const tr = cb.closest('tr');
-            if (tr) {
-                const id = tr.dataset.id || cb.dataset.grupoId;
-                cb.checked = seleccionados.has(id);
+            if (!tr) return;
+            
+            const id = tr.dataset.id || cb.dataset.grupoId;
+            if (seleccionados.has(id)) {
+                cb.checked = true;
             }
         });
-        actualizarSelectAll();
+    }
+
+    function guardarEstadoExpansion() {
+        gruposExpandidos.clear();
+        document.querySelectorAll('.grupo-padre[data-expanded="true"]').forEach(tr => {
+            gruposExpandidos.add(tr.dataset.grupoId);
+        });
     }
 
     function restaurarEstadoExpansion() {
         gruposExpandidos.forEach(grupoId => {
-            const grupoPadre = document.querySelector(`tr.grupo-padre[data-grupo-id="${grupoId}"]`);
-            if (grupoPadre) {
+            const tr = document.querySelector(`.grupo-padre[data-grupo-id="${grupoId}"]`);
+            if (tr) {
                 const hijos = document.querySelectorAll(`.grupo-hijo-${grupoId}`);
-                const icon = grupoPadre.querySelector('.expand-btn i');
-                
-                hijos.forEach(hijo => hijo.classList.remove('hidden'));
+                hijos.forEach(h => h.classList.remove('hidden'));
+                tr.dataset.expanded = 'true';
+                const icon = tr.querySelector('.expand-btn i');
                 if (icon) icon.style.transform = 'rotate(90deg)';
-                grupoPadre.dataset.expanded = 'true';
             }
         });
     }
 
-    function actualizarSelectAll() {
-        const selectAll = document.getElementById('select-all');
-        if (!selectAll) return;
+    function updateBotonEliminar() {
+        const btnEliminarSeleccion = document.getElementById('btn-eliminar-seleccionadas');
+        if (!btnEliminarSeleccion) return;
 
-        const checkboxes = document.querySelectorAll('.select-row, .select-grupo');
-        const checkedBoxes = Array.from(checkboxes).filter(cb => cb.checked);
+        const checkedBoxes = document.querySelectorAll('.select-row:checked, .select-grupo:checked');
+        const count = checkedBoxes.length;
 
-        if (checkedBoxes.length === checkboxes.length && checkboxes.length > 0) {
-            selectAll.checked = true;
-            selectAll.indeterminate = false;
-        } else if (checkedBoxes.length > 0) {
-            selectAll.checked = false;
-            selectAll.indeterminate = true;
+        if (count > 0) {
+            btnEliminarSeleccion.disabled = false;
+            btnEliminarSeleccion.classList.remove('btn-disabled');
+            btnEliminarSeleccion.innerHTML = `Eliminar (${count})`;
         } else {
-            selectAll.checked = false;
-            selectAll.indeterminate = false;
+            btnEliminarSeleccion.disabled = true;
+            btnEliminarSeleccion.classList.add('btn-disabled');
+            btnEliminarSeleccion.innerHTML = `Eliminar seleccionadas`;
         }
-    }
 
-    // Inicializar todos los eventos después de cada carga
-    function initAllEvents() {
-        initOrdenamiento();
-        initBusqueda();
-        initCheckboxes();
-        initEdicion();
-        initEliminacionIndividual();
-        initGlobalTimePicker();
-        initGruposSemestrales();
-        initFiltroSemana();
-    }
-
-    // 0. Funcionalidad para grupos semestrales expandibles
-    function initGruposSemestrales() {
-        // 🔥 MÉTODO SIMPLIFICADO: Usar delegación de eventos en lugar de clonar
-        
-        // Expandir/colapsar con el botón
-        document.querySelectorAll('.expand-btn').forEach(btn => {
-            // Marcar que ya tiene el listener
-            if (!btn.dataset.hasListener) {
-                btn.dataset.hasListener = 'true';
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const tr = this.closest('tr.grupo-padre');
-                    if (!tr) return;
-                    
-                    const grupoId = tr.dataset.grupoId;
-                    const isExpanded = tr.dataset.expanded === 'true';
-                    const icon = this.querySelector('i');
-                    const hijos = document.querySelectorAll(`.grupo-hijo-${grupoId}`);
-                    
-                    if (isExpanded) {
-                        // Colapsar
-                        hijos.forEach(hijo => hijo.classList.add('hidden'));
-                        if (icon) icon.style.transform = 'rotate(0deg)';
-                        tr.dataset.expanded = 'false';
-                        gruposExpandidos.delete(grupoId);
-                    } else {
-                        // Expandir
-                        hijos.forEach(hijo => hijo.classList.remove('hidden'));
-                        if (icon) icon.style.transform = 'rotate(90deg)';
-                        tr.dataset.expanded = 'true';
-                        gruposExpandidos.add(grupoId);
-                    }
-                    
-                    // Re-inicializar iconos
-                    if (typeof lucide !== 'undefined') {
-                        lucide.createIcons();
-                    }
-                });
-            }
-        });
-
-        // Click en toda la fila padre
-        document.querySelectorAll('.grupo-padre').forEach(tr => {
-            if (!tr.dataset.hasListener) {
-                tr.dataset.hasListener = 'true';
-                tr.addEventListener('click', function(e) {
-                    // No expandir si se hace click en inputs, botones o celdas editables
-                    if (e.target.closest('input, button, .editable-grupo')) return;
-                    
-                    const btn = this.querySelector('.expand-btn');
-                    if (btn) {
-                        btn.click();
-                    }
-                });
-            }
-        });
-
-        // Botones de editar grupo
-        document.querySelectorAll('.btn-editar-grupo').forEach(btn => {
-            if (!btn.dataset.hasListener) {
-                btn.dataset.hasListener = 'true';
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const tr = this.closest('tr');
-                    editarGrupo(tr);
-                });
-            }
-        });
-
-        // Botones de eliminar grupo
-        document.querySelectorAll('.btn-eliminar-grupo').forEach(btn => {
-            if (!btn.dataset.hasListener) {
-                btn.dataset.hasListener = 'true';
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const tr = this.closest('tr');
-                    const grupoId = tr.dataset.grupoId;
-                    eliminarGrupoCompleto(grupoId);
-                });
-            }
-        });
-        
-        // Re-inicializar iconos de lucide
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
     }
 
-    function editarGrupo(tr) {
-        if (editingRow) {
-            alert('Ya hay una edición en curso');
-            return;
-        }
-        editingRow = tr;
-
-        tr.querySelectorAll('.editable-grupo').forEach(td => {
-            const field = td.dataset.field;
-            let value = td.textContent.trim();
-            let html = '';
-
-            if (field === 'catedra') {
-                const currentId = td.dataset.id;
-                const opts = window.APP_DATA.catedras.map(c =>
-                    `<option value="${c.id}" ${c.id == currentId ? 'selected' : ''}>${c.nombre}</option>`
-                ).join('');
-                html = `<select class="select select-xs w-full" style="background-color: #1a1a1a !important; color: white !important;">${opts}</select>`;
-            } else if (field === 'aula') {
-                const currentId = td.dataset.id;
-                const opts = window.APP_DATA.aulas.map(a =>
-                    `<option value="${a.id}" ${a.id == currentId ? 'selected' : ''}>${a.numero}</option>`
-                ).join('');
-                html = `<select class="select select-xs w-full" style="background-color: #1a1a1a !important; color: white !important;">${opts}</select>`;
-            } else if (field === 'fecha_fin_semestre') {
-                html = `<input type="date" value="${value}" class="input input-xs w-full" style="background-color: #1a1a1a !important; color: white !important; min-width: 120px;">`;
-            } else if (field === 'hora_inicio' || field === 'hora_fin') {
-                html = `<input type="text" value="${value}" class="input input-xs w-full time-input-edit" style="background-color: #1a1a1a !important; color: white !important; min-width: 70px;" readonly>`;
-            } else {
-                html = `<input type="text" value="${value}" class="input input-xs w-full" style="background-color: #1a1a1a !important; color: white !important;">`;
-            }
-            td.innerHTML = html;
-        });
-
-        const acciones = tr.lastElementChild;
-        acciones.innerHTML = `
-            <button class="btn-guardar-grupo btn btn-xs btn-success btn-outline gap-1 hover:bg-green-500/10 transition-all">
-                <i data-lucide="check" class="w-3.5 h-3.5"></i>
-                Guardar
-            </button>
-            <button class="btn-cancelar btn btn-xs btn-warning btn-outline gap-1 hover:bg-yellow-500/10 transition-all">
-                <i data-lucide="x" class="w-3.5 h-3.5"></i>
-                Cancelar
-            </button>
-        `;
-
-        lucide.createIcons();
-
-        acciones.querySelector('.btn-guardar-grupo').onclick = (e) => {
-            e.stopPropagation();
-            guardarGrupo(tr);
-        };
-        acciones.querySelector('.btn-cancelar').onclick = (e) => {
-            e.stopPropagation();
-            cancelarEdicion();
-        };
+    function initAllEvents() {
+        initSeleccionTodo();
+        initSeleccionFila();
+        initSeleccionGrupo();
+        initExpandirGrupos();
+        initEdicionInline();
+        initEdicionGrupo();
+        initEliminacionIndividual();
+        initEliminacionGrupo();
+        initBuscador();
+        initOrdenamientoTabla();
+        initFiltroSemana();
+        initGlobalTimePicker();
     }
 
-    function guardarGrupo(tr) {
-        const grupoId = tr.dataset.grupoId;
-        const formData = new FormData();
+    // 1. Select All
+    function initSeleccionTodo() {
+        const selectAll = document.getElementById('select-all');
+        if (!selectAll) return;
 
-        tr.querySelectorAll('.editable-grupo').forEach(td => {
-            const field = td.dataset.field;
-            const input = td.querySelector('input, select');
-            if (input) {
-                formData.append(field, input.value.trim());
-            }
-        });
-
-        formData.append('grupo_id', grupoId);
-
-        fetch(window.APP_URLS.updateGrupoSemestral, {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-CSRFToken': window.CSRF_TOKEN || getCsrfToken() }
-        })
-        .then(r => r.json().then(data => ({ok: r.ok, data})))
-        .then(({ok, data}) => {
-            if (ok && data.success) {
-                editingRow = null;
-                alert(data.message || 'Grupo actualizado correctamente');
-                recargarTabla();
-            } else {
-                alert(data.message || 'Error al guardar los cambios');
-                cancelarEdicion();
-            }
-        })
-        .catch(err => {
-            console.error('Error completo:', err);
-            alert('Error de conexión');
-            cancelarEdicion();
-        });
-    }
-
-    function eliminarGrupoCompleto(grupoId) {
-        if (!confirm('¿Seguro que deseas eliminar todo el grupo semestral?')) return;
-
-        const hijos = document.querySelectorAll(`.grupo-hijo-${grupoId}`);
-        const idsAEliminar = [grupoId];
-        hijos.forEach(hijo => idsAEliminar.push(hijo.dataset.id));
-
-        const formData = new FormData();
-        idsAEliminar.forEach(id => formData.append('ids[]', id));
-
-        fetch(window.APP_URLS.deleteReservas, {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-CSRFToken': window.CSRF_TOKEN || getCsrfToken() }
-        })
-        .then(r => r.json().then(data => ({ok: r.ok, data})))
-        .then(({ok, data}) => {
-            if (ok && data.success) {
-                alert(data.message || 'Grupo eliminado correctamente');
-                recargarTabla();
-            } else {
-                alert(data.message || 'Error al eliminar');
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            alert('Error de conexión');
-        });
-    }
-
-    // 1. Ordenamiento múltiple
-    let ordenesActivos = [];
-
-    function initOrdenamiento() {
-        const params = new URLSearchParams(window.location.search);
-        const orderStr = params.get('order');
-        
-        ordenesActivos = [];
-        if (orderStr) {
-            orderStr.split(',').forEach(fieldStr => {
-                fieldStr = fieldStr.trim();
-                if (fieldStr.startsWith('-')) {
-                    ordenesActivos.push({field: fieldStr.substring(1), dir: 'desc'});
-                } else {
-                    ordenesActivos.push({field: fieldStr, dir: 'asc'});
+        selectAll.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.select-row, .select-grupo');
+            checkboxes.forEach(cb => {
+                cb.checked = this.checked;
+                
+                if (cb.classList.contains('select-grupo')) {
+                    const grupoId = cb.dataset.grupoId;
+                    const hijos = document.querySelectorAll(`.grupo-hijo-${grupoId} .select-row`);
+                    hijos.forEach(hijo => hijo.checked = this.checked);
                 }
             });
-        }
-        
-        actualizarIndicadoresVisuales();
-        
-        document.querySelectorAll('.order-btn').forEach(btn => {
-            btn.addEventListener('click', e => {
-                e.preventDefault();
-                const field = btn.dataset.field;
-                
-                guardarSeleccion();
-                
-                const existeIdx = ordenesActivos.findIndex(o => o.field === field);
-                
-                if (existeIdx !== -1) {
-                    const orden = ordenesActivos[existeIdx];
-                    if (orden.dir === 'asc') {
-                        orden.dir = 'desc';
-                        ordenesActivos.splice(existeIdx, 1);
-                        ordenesActivos.unshift(orden);
-                    } else {
-                        ordenesActivos.splice(existeIdx, 1);
-                    }
-                } else {
-                    ordenesActivos.unshift({field, dir: 'asc'});
-                }
-                
-                aplicarOrdenamiento();
-            });
-        });
-    }
-    
-    function actualizarIndicadoresVisuales() {
-        document.querySelectorAll('.order-btn').forEach(btn => {
-            const field = btn.dataset.field;
-            const indicator = btn.querySelector('.order-indicator');
-            if (!indicator) return;
-            
-            const idx = ordenesActivos.findIndex(o => o.field === field);
-            if (idx !== -1) {
-                const orden = ordenesActivos[idx];
-                const arrow = orden.dir === 'asc' ? '↑' : '↓';
-                const priority = ordenesActivos.length > 1 ? ` ${idx+1}` : '';
-                indicator.textContent = `${arrow}${priority}`;
-                btn.classList.add('text-blue-400');
-            } else {
-                indicator.textContent = '';
-                btn.classList.remove('text-blue-400');
-            }
-        });
-    }
-    
-    function aplicarOrdenamiento() {
-        const orderStr = ordenesActivos
-            .map(o => (o.dir === 'desc' ? '-' : '') + o.field)
-            .join(',');
-        
-        const params = new URLSearchParams(window.location.search);
-        if (orderStr) {
-            params.set('order', orderStr);
-        } else {
-            params.delete('order');
-        }
-        
-        const url = window.APP_URLS.listaReservas + '?' + params.toString();
-        window.history.replaceState({}, '', '?' + params.toString());
-        
-        fetch(url, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(r => r.text())
-        .then(html => {
-            tablaContainer.innerHTML = html;
-            restaurarSeleccion();
-            restaurarEstadoExpansion();
-            initAllEvents();
             updateBotonEliminar();
-            
-            lucide.createIcons();
-        })
-        .catch(err => console.error(err));
+        });
     }
 
-    // 2. Búsqueda
-    function initBusqueda() {
-        if (buscadorInitialized) return;
-        buscadorInitialized = true;
+    // 2. Select Fila
+    function initSeleccionFila() {
+        document.querySelectorAll('.select-row').forEach(cb => {
+            cb.addEventListener('change', () => updateBotonEliminar());
+        });
+    }
 
-        const buscador = document.getElementById('buscador');
-        if (!buscador) return;
+    // 3. Select Grupo (semestral)
+    function initSeleccionGrupo() {
+        document.querySelectorAll('.select-grupo').forEach(cb => {
+            cb.addEventListener('change', function() {
+                const grupoId = this.dataset.grupoId;
+                const hijos = document.querySelectorAll(`.grupo-hijo-${grupoId} .select-row`);
+                hijos.forEach(hijo => hijo.checked = this.checked);
+                updateBotonEliminar();
+            });
+        });
+    }
 
-        let timeout = null;
-        buscador.addEventListener('input', () => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                guardarSeleccion();
-                
-                const params = new URLSearchParams(window.location.search);
-                if (buscador.value.trim()) {
-                    params.set('q', buscador.value.trim());
+    // 4. Expandir/Colapsar grupos
+    function initExpandirGrupos() {
+        document.querySelectorAll('.grupo-padre').forEach(tr => {
+            const grupoId = tr.dataset.grupoId;
+            const expandBtn = tr.querySelector('.expand-btn');
+            
+            if (!expandBtn) return;
+
+            expandBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const expanded = tr.dataset.expanded === 'true';
+                const hijos = document.querySelectorAll(`.grupo-hijo-${grupoId}`);
+                const icon = expandBtn.querySelector('i');
+
+                if (expanded) {
+                    hijos.forEach(h => h.classList.add('hidden'));
+                    tr.dataset.expanded = 'false';
+                    if (icon) icon.style.transform = 'rotate(0deg)';
                 } else {
-                    params.delete('q');
+                    hijos.forEach(h => h.classList.remove('hidden'));
+                    tr.dataset.expanded = 'true';
+                    if (icon) icon.style.transform = 'rotate(90deg)';
                 }
+            });
+        });
+    }
 
+    // Ordenamiento
+    function initOrdenamientoTabla() {
+        const orderButtons = document.querySelectorAll('.order-btn');
+        
+        orderButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const field = this.dataset.field;
+                const params = new URLSearchParams(window.location.search);
+                
+                const currentOrder = params.get('order');
+                const currentDir = params.get('dir') || 'asc';
+                
+                let newDir = 'asc';
+                if (currentOrder === field) {
+                    newDir = currentDir === 'asc' ? 'desc' : 'asc';
+                }
+                
+                params.set('order', field);
+                params.set('dir', newDir);
+                
+                guardarSeleccion();
+                guardarEstadoExpansion();
+                
                 const url = window.APP_URLS.listaReservas + '?' + params.toString();
                 window.history.replaceState({}, '', '?' + params.toString());
-
+                
                 fetch(url, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 })
@@ -611,94 +380,77 @@ document.addEventListener('DOMContentLoaded', function () {
                     lucide.createIcons();
                 })
                 .catch(err => console.error(err));
-            }, 300);
-        });
-    }
-
-    // 3. Checkboxes
-    function initCheckboxes() {
-        const selectAll = document.getElementById('select-all');
-        if (selectAll) {
-            selectAll.addEventListener('change', () => {
-                const checked = selectAll.checked;
-                document.querySelectorAll('.select-row, .select-grupo').forEach(cb => {
-                    cb.checked = checked;
-                    const tr = cb.closest('tr');
-                    if (tr) {
-                        const id = tr.dataset.id || cb.dataset.grupoId;
-                        if (checked) {
-                            seleccionados.add(id);
-                            if (cb.classList.contains('select-grupo')) {
-                                const hijos = document.querySelectorAll(`.grupo-hijo-${id}`);
-                                hijos.forEach(hijo => seleccionados.add(hijo.dataset.id));
-                            }
-                        } else {
-                            seleccionados.delete(id);
-                            if (cb.classList.contains('select-grupo')) {
-                                const hijos = document.querySelectorAll(`.grupo-hijo-${id}`);
-                                hijos.forEach(hijo => seleccionados.delete(hijo.dataset.id));
-                            }
-                        }
-                    }
-                });
-                updateBotonEliminar();
-            });
-        }
-
-        document.querySelectorAll('.select-row').forEach(cb => {
-            cb.addEventListener('change', () => {
-                const tr = cb.closest('tr');
-                const id = tr.dataset.id;
-                if (cb.checked) {
-                    seleccionados.add(id);
-                } else {
-                    seleccionados.delete(id);
-                }
-                actualizarSelectAll();
-                updateBotonEliminar();
-            });
-        });
-
-        document.querySelectorAll('.select-grupo').forEach(cb => {
-            cb.addEventListener('change', () => {
-                const grupoId = cb.dataset.grupoId;
-                const hijos = document.querySelectorAll(`.grupo-hijo-${grupoId}`);
-                const checked = cb.checked;
-
-                if (checked) {
-                    seleccionados.add(grupoId);
-                    hijos.forEach(hijo => seleccionados.add(hijo.dataset.id));
-                } else {
-                    seleccionados.delete(grupoId);
-                    hijos.forEach(hijo => seleccionados.delete(hijo.dataset.id));
-                }
-                actualizarSelectAll();
-                updateBotonEliminar();
             });
         });
     }
 
-    function updateBotonEliminar() {
-        const btn = document.getElementById('btn-eliminar-seleccionadas');
-        if (!btn) return;
+    // Buscador
+    function initBuscador() {
+        if (buscadorInitialized) return;
+        buscadorInitialized = true;
 
-        if (seleccionados.size > 0) {
-            btn.disabled = false;
-            btn.textContent = `Eliminar seleccionadas (${seleccionados.size})`;
-        } else {
-            btn.disabled = true;
-            btn.textContent = 'Eliminar seleccionadas';
-        }
+        const buscador = document.getElementById('buscador');
+        if (!buscador) return;
+
+        buscador.addEventListener('input', function() {
+            const texto = this.value.toLowerCase().trim();
+            const params = new URLSearchParams(window.location.search);
+            
+            if (texto) {
+                params.set('q', texto);
+            } else {
+                params.delete('q');
+            }
+            
+            guardarSeleccion();
+            guardarEstadoExpansion();
+            
+            const url = window.APP_URLS.listaReservas + '?' + params.toString();
+            window.history.replaceState({}, '', '?' + params.toString());
+            
+            fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(r => r.text())
+            .then(html => {
+                tablaContainer.innerHTML = html;
+                restaurarSeleccion();
+                restaurarEstadoExpansion();
+                initAllEvents();
+                updateBotonEliminar();
+                
+                lucide.createIcons();
+            })
+            .catch(err => console.error(err));
+        });
     }
 
+    // Eliminación masiva
     const btnEliminar = document.getElementById('btn-eliminar-seleccionadas');
     if (btnEliminar) {
         btnEliminar.addEventListener('click', () => {
-            if (seleccionados.size === 0) return;
-            if (!confirm(`¿Eliminar ${seleccionados.size} reserva(s)?`)) return;
+            const checks = document.querySelectorAll('.select-row:checked, .select-grupo:checked');
+            if (checks.length === 0) {
+                alert('No hay reservas seleccionadas');
+                return;
+            }
+
+            const ids = [];
+            checks.forEach(cb => {
+                const tr = cb.closest('tr');
+                if (cb.classList.contains('select-grupo')) {
+                    const grupoId = cb.dataset.grupoId;
+                    const hijos = document.querySelectorAll(`.grupo-hijo-${grupoId}`);
+                    hijos.forEach(hijo => ids.push(hijo.dataset.id));
+                } else {
+                    ids.push(tr.dataset.id);
+                }
+            });
+
+            if (!confirm(`¿Eliminar ${ids.length} reserva(s)?`)) return;
 
             const formData = new FormData();
-            seleccionados.forEach(id => formData.append('ids[]', id));
+            ids.forEach(id => formData.append('ids[]', id));
 
             fetch(window.APP_URLS.deleteReservas, {
                 method: 'POST',
@@ -709,7 +461,6 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(({ok, data}) => {
                 if (ok && data.success) {
                     alert(data.message || 'Reservas eliminadas');
-                    seleccionados.clear();
                     recargarTabla();
                 } else {
                     alert(data.message || 'Error al eliminar');
@@ -722,8 +473,223 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // 4. Edición inline
-    function initEdicion() {
+    // Edición GRUPOS SEMESTRALES
+    function initEdicionGrupo() {
+        document.querySelectorAll('.btn-editar-grupo').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tr = btn.closest('tr.grupo-padre');
+                editarGrupo(tr);
+            });
+        });
+    }
+
+    function editarGrupo(tr) {
+        if (editingRow && editingRow !== tr) {
+            cancelarEdicion();
+        }
+        editingRow = tr;
+
+        const grupoId = tr.dataset.grupoId;
+        const requerimientosIds = JSON.parse(tr.dataset.requerimientos || '[]');
+
+        // Obtener valores actuales
+        let docente = '', catedraId = '', aulaId = '', fechaFin = '', horaInicio = '', horaFin = '';
+
+        tr.querySelectorAll('.editable-grupo').forEach(td => {
+            const field = td.dataset.field;
+            if (field === 'docente') docente = td.textContent.trim();
+            else if (field === 'catedra') catedraId = td.dataset.id;
+            else if (field === 'aula') aulaId = td.dataset.id;
+            else if (field === 'fecha_fin_semestre') fechaFin = td.textContent.trim();
+            else if (field === 'hora_inicio') horaInicio = td.textContent.trim();
+            else if (field === 'hora_fin') horaFin = td.textContent.trim();
+        });
+
+        // Crear el contenido expandido
+        const contenido = document.createElement('tr');
+        contenido.classList.add('grupo-edicion-expandida', 'bg-[#0f172a]');
+        contenido.innerHTML = `
+            <td colspan="10" class="p-4">
+                <div class="flex flex-col gap-3">
+                    <!-- Campos básicos -->
+                    <div class="flex gap-2">
+                        <input id="edit-docente-${grupoId}"
+                               value="${docente}"
+                               placeholder="Docente"
+                               class="input input-xs bg-[#1a1a1a] text-white flex-1">
+
+                        <select id="edit-catedra-${grupoId}" class="select select-xs bg-[#1a1a1a] text-white flex-1">
+                            ${window.APP_DATA.catedras.map(c => 
+                                `<option value="${c.id}" ${c.id == catedraId ? 'selected' : ''}>${c.nombre}</option>`
+                            ).join('')}
+                        </select>
+
+                        <select id="edit-aula-${grupoId}" class="select select-xs bg-[#1a1a1a] text-white w-32">
+                            ${window.APP_DATA.aulas.map(a => 
+                                `<option value="${a.id}" ${a.id == aulaId ? 'selected' : ''}>${a.numero}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <input id="edit-fecha-fin-${grupoId}"
+                               type="date"
+                               value="${fechaFin}"
+                               class="input input-xs bg-[#1a1a1a] text-white w-44">
+
+                        <input id="edit-hora-inicio-${grupoId}"
+                               value="${horaInicio}"
+                               readonly
+                               class="input input-xs bg-[#1a1a1a] text-white w-28 time-input-edit">
+
+                        <input id="edit-hora-fin-${grupoId}"
+                               value="${horaFin}"
+                               readonly
+                               class="input input-xs bg-[#1a1a1a] text-white w-28 time-input-edit">
+                    </div>
+
+                    <!-- Selector de requerimientos (IGUAL QUE AULAS.JS) -->
+                    <div>
+                        <label class="text-gray-300 text-xs mb-1 block">Requerimientos:</label>
+                        <div class="relative mb-2">
+                            <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input type="text"
+                                   id="buscador-req-${grupoId}"
+                                   placeholder="Buscar requerimiento..."
+                                   class="input input-xs w-full pl-8 bg-[#0f172a] border-white/10 text-white" />
+                        </div>
+
+                        <div id="lista-req-${grupoId}"
+                             class="max-h-32 overflow-y-auto space-y-1 p-2 rounded-xl bg-[#0f172a] border border-white/10">
+                            ${window.APP_DATA.requerimientos.map(r => `
+                                <label class="flex items-center gap-2 text-gray-300 text-xs cursor-pointer requerimiento-item-edit">
+                                    <input type="checkbox"
+                                           class="checkbox checkbox-xs"
+                                           value="${r.id}"
+                                           ${requerimientosIds.includes(r.id) ? 'checked' : ''}>
+                                    <span class="requerimiento-nombre-edit">${r.nombre}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="flex gap-2">
+                        <button class="btn btn-xs btn-success btn-outline btn-guardar-grupo gap-1">
+                            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                            Guardar
+                        </button>
+                        <button class="btn btn-xs btn-warning btn-outline btn-cancelar-grupo gap-1">
+                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </td>
+        `;
+
+        // Insertar después de la fila principal
+        tr.insertAdjacentElement('afterend', contenido);
+        lucide.createIcons();
+
+        // Buscador de requerimientos
+        const buscadorReq = document.getElementById(`buscador-req-${grupoId}`);
+        const items = contenido.querySelectorAll('.requerimiento-item-edit');
+        buscadorReq.addEventListener('input', () => {
+            const texto = buscadorReq.value.toLowerCase();
+            items.forEach(item => {
+                const nombre = item.querySelector('.requerimiento-nombre-edit').innerText.toLowerCase();
+                item.style.display = nombre.includes(texto) ? 'flex' : 'none';
+            });
+        });
+
+        // Botones
+        contenido.querySelector('.btn-guardar-grupo').onclick = () => guardarGrupo(grupoId, contenido);
+        contenido.querySelector('.btn-cancelar-grupo').onclick = () => cancelarEdicion();
+    }
+
+    function guardarGrupo(grupoId, contenidoExpandido) {
+        const docente = document.getElementById(`edit-docente-${grupoId}`).value.trim();
+        const catedraId = document.getElementById(`edit-catedra-${grupoId}`).value;
+        const aulaId = document.getElementById(`edit-aula-${grupoId}`).value;
+        const fechaFin = document.getElementById(`edit-fecha-fin-${grupoId}`).value;
+        const horaInicio = document.getElementById(`edit-hora-inicio-${grupoId}`).value;
+        const horaFin = document.getElementById(`edit-hora-fin-${grupoId}`).value;
+
+        const requerimientos = Array.from(
+            contenidoExpandido.querySelectorAll(`#lista-req-${grupoId} input[type="checkbox"]:checked`)
+        ).map(cb => cb.value);
+
+
+        const formData = new FormData();
+        formData.append('grupo_id', grupoId);  // ✅ ENVIAR grupo_id en POST
+        formData.append('docente', docente);
+        formData.append('catedra', catedraId);
+        formData.append('aula', aulaId);
+        formData.append('fecha_fin_semestre', fechaFin);
+        formData.append('hora_inicio', horaInicio);
+        formData.append('hora_fin', horaFin);
+        formData.append('requerimientos', requerimientos.join(','));
+
+        fetch(window.APP_URLS.updateGrupoSemestral, {  // ✅ SIN parámetros GET
+            method: 'POST',
+            body: formData,
+            headers: { 'X-CSRFToken': window.CSRF_TOKEN || getCsrfToken() }
+        })
+        .then(r => r.json().then(data => ({ok: r.ok, data})))
+        .then(({ok, data}) => {
+            if (ok && data.success) {
+                editingRow = null;
+                alert('Grupo semestral actualizado correctamente');
+                recargarTabla();
+            } else {
+                throw new Error(data.message || 'Error al guardar');
+            }
+        })
+        .catch(err => {
+            alert(err.message);
+            cancelarEdicion();
+        });
+    }
+
+    // Eliminación de GRUPOS SEMESTRALES
+    function initEliminacionGrupo() {
+        document.querySelectorAll('.btn-eliminar-grupo').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tr = btn.closest('tr.grupo-padre');
+                const grupoId = tr.dataset.grupoId;
+                const hijos = document.querySelectorAll(`.grupo-hijo-${grupoId}`);
+
+                if (!confirm(`¿Eliminar todo el grupo semestral (${hijos.length} reservas)?`)) return;
+
+                const ids = Array.from(hijos).map(h => h.dataset.id);
+                const formData = new FormData();
+                ids.forEach(id => formData.append('ids[]', id));
+
+                fetch(window.APP_URLS.deleteReservas, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-CSRFToken': window.CSRF_TOKEN || getCsrfToken() }
+                })
+                .then(r => r.json().then(data => ({ok: r.ok, data})))
+                .then(({ok, data}) => {
+                    if (ok && data.success) {
+                        alert(data.message || 'Grupo eliminado');
+                        recargarTabla();
+                    } else {
+                        alert(data.message || 'Error al eliminar');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Error de conexión');
+                });
+            });
+        });
+    }
+
+    // Edición RESERVAS OCASIONALES
+    function initEdicionInline() {
         document.querySelectorAll('.btn-editar').forEach(btn => {
             btn.addEventListener('click', () => {
                 const tr = btn.closest('tr');
@@ -733,55 +699,130 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function editarFila(tr) {
-        if (editingRow) {
-            alert('Ya hay una edición en curso');
-            return;
+        if (editingRow && editingRow !== tr) {
+            cancelarEdicion();
         }
         editingRow = tr;
 
+        const reservaId = tr.dataset.id;
+        const requerimientosIds = JSON.parse(tr.dataset.requerimientos || '[]');
+
+        // Obtener valores actuales
+        let docente = '', catedraId = '', aulaId = '', fecha = '', horaInicio = '', horaFin = '';
+
         tr.querySelectorAll('.editable').forEach(td => {
             const field = td.dataset.field;
-            let value = td.textContent.trim();
-            let html = '';
-
-            if (field === 'catedra') {
-                const currentId = td.dataset.id;
-                const opts = window.APP_DATA.catedras.map(c =>
-                    `<option value="${c.id}" ${c.id == currentId ? 'selected' : ''}>${c.nombre}</option>`
-                ).join('');
-                html = `<select class="select select-xs w-full" style="background-color: #1a1a1a !important; color: white !important;">${opts}</select>`;
-            } else if (field === 'aula') {
-                const currentId = td.dataset.id;
-                const opts = window.APP_DATA.aulas.map(a =>
-                    `<option value="${a.id}" ${a.id == currentId ? 'selected' : ''}>${a.numero}</option>`
-                ).join('');
-                html = `<select class="select select-xs w-full" style="background-color: #1a1a1a !important; color: white !important;">${opts}</select>`;
-            } else if (field === 'fecha') {
-                html = `<input type="date" value="${value}" class="input input-xs w-full" style="background-color: #1a1a1a !important; color: white !important; min-width: 120px;">`;
-            } else if (field === 'hora_inicio' || field === 'hora_fin') {
-                html = `<input type="text" value="${value}" class="input input-xs w-full time-input-edit" style="background-color: #1a1a1a !important; color: white !important; min-width: 70px;" readonly>`;
-            } else {
-                html = `<input type="text" value="${value}" class="input input-xs w-full" style="background-color: #1a1a1a !important; color: white !important;">`;
-            }
-            td.innerHTML = html;
+            const value = td.textContent.trim();
+            
+            if (field === 'docente') docente = value;
+            else if (field === 'catedra') catedraId = td.dataset.id;
+            else if (field === 'aula') aulaId = td.dataset.id;
+            else if (field === 'fecha') fecha = value;
+            else if (field === 'hora_inicio') horaInicio = value;
+            else if (field === 'hora_fin') horaFin = value;
         });
 
-        const acciones = tr.lastElementChild;
-        acciones.innerHTML = `
-            <button class="btn-guardar btn btn-xs btn-success btn-outline gap-1 hover:bg-green-500/10 transition-all">
-                <i data-lucide="check" class="w-3.5 h-3.5"></i>
-                Guardar
-            </button>
-            <button class="btn-cancelar btn btn-xs btn-warning btn-outline gap-1 hover:bg-yellow-500/10 transition-all">
-                <i data-lucide="x" class="w-3.5 h-3.5"></i>
-                Cancelar
-            </button>
+        // Crear el contenido expandido
+        const contenido = document.createElement('tr');
+        contenido.classList.add('fila-edicion-expandida', 'bg-[#0f172a]');
+        contenido.innerHTML = `
+            <td colspan="9" class="p-4">
+                <div class="flex flex-col gap-3">
+                    <!-- Campos básicos -->
+                    <div class="flex gap-2">
+                        <input id="edit-docente-${reservaId}"
+                               value="${docente}"
+                               placeholder="Docente"
+                               class="input input-xs bg-[#1a1a1a] text-white flex-1">
+
+                        <select id="edit-catedra-${reservaId}" class="select select-xs bg-[#1a1a1a] text-white flex-1">
+                            ${window.APP_DATA.catedras.map(c => 
+                                `<option value="${c.id}" ${c.id == catedraId ? 'selected' : ''}>${c.nombre}</option>`
+                            ).join('')}
+                        </select>
+
+                        <select id="edit-aula-${reservaId}" class="select select-xs bg-[#1a1a1a] text-white w-32">
+                            ${window.APP_DATA.aulas.map(a => 
+                                `<option value="${a.id}" ${a.id == aulaId ? 'selected' : ''}>${a.numero}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <input id="edit-fecha-${reservaId}"
+                               type="date"
+                               value="${fecha}"
+                               class="input input-xs bg-[#1a1a1a] text-white w-44">
+
+                        <input id="edit-hora-inicio-${reservaId}"
+                               value="${horaInicio}"
+                               readonly
+                               class="input input-xs bg-[#1a1a1a] text-white w-28 time-input-edit">
+
+                        <input id="edit-hora-fin-${reservaId}"
+                               value="${horaFin}"
+                               readonly
+                               class="input input-xs bg-[#1a1a1a] text-white w-28 time-input-edit">
+                    </div>
+
+                    <!-- Selector de requerimientos (IGUAL QUE AULAS.JS) -->
+                    <div>
+                        <label class="text-gray-300 text-xs mb-1 block">Requerimientos:</label>
+                        <div class="relative mb-2">
+                            <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input type="text"
+                                   id="buscador-req-${reservaId}"
+                                   placeholder="Buscar requerimiento..."
+                                   class="input input-xs w-full pl-8 bg-[#0f172a] border-white/10 text-white" />
+                        </div>
+
+                        <div id="lista-req-${reservaId}"
+                             class="max-h-32 overflow-y-auto space-y-1 p-2 rounded-xl bg-[#0f172a] border border-white/10">
+                            ${window.APP_DATA.requerimientos.map(r => `
+                                <label class="flex items-center gap-2 text-gray-300 text-xs cursor-pointer requerimiento-item-edit">
+                                    <input type="checkbox"
+                                           class="checkbox checkbox-xs"
+                                           value="${r.id}"
+                                           ${requerimientosIds.includes(r.id) ? 'checked' : ''}>
+                                    <span class="requerimiento-nombre-edit">${r.nombre}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="flex gap-2">
+                        <button class="btn btn-xs btn-success btn-outline btn-guardar-fila gap-1">
+                            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                            Guardar
+                        </button>
+                        <button class="btn btn-xs btn-warning btn-outline btn-cancelar-fila gap-1">
+                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </td>
         `;
 
+        // Insertar después de la fila principal
+        tr.insertAdjacentElement('afterend', contenido);
         lucide.createIcons();
 
-        acciones.querySelector('.btn-guardar').onclick = () => guardarFila(tr);
-        acciones.querySelector('.btn-cancelar').onclick = () => cancelarEdicion();
+        // Buscador de requerimientos
+        const buscadorReq = document.getElementById(`buscador-req-${reservaId}`);
+        const items = contenido.querySelectorAll('.requerimiento-item-edit');
+        buscadorReq.addEventListener('input', () => {
+            const texto = buscadorReq.value.toLowerCase();
+            items.forEach(item => {
+                const nombre = item.querySelector('.requerimiento-nombre-edit').innerText.toLowerCase();
+                item.style.display = nombre.includes(texto) ? 'flex' : 'none';
+            });
+        });
+
+        // Botones
+        contenido.querySelector('.btn-guardar-fila').onclick = () => guardarFila(reservaId, contenido);
+        contenido.querySelector('.btn-cancelar-fila').onclick = () => cancelarEdicion();
     }
 
     // Time Picker
@@ -819,7 +860,7 @@ document.addEventListener('DOMContentLoaded', function () {
             picker.setAttribute('data-init', 'true');
         }
 
-        tablaContainer.addEventListener('focusin', e => {
+        document.addEventListener('focusin', e => {
             if (e.target.classList.contains('time-input-edit')) {
                 abrirPickerGlobal(e.target, picker);
             }
@@ -900,47 +941,63 @@ document.addEventListener('DOMContentLoaded', function () {
         pickerInputActivo = null;
     }
 
-    function guardarFila(tr) {
-        const id = tr.dataset.id;
+    function guardarFila(reservaId, contenidoExpandido) {
+        const docente = document.getElementById(`edit-docente-${reservaId}`).value.trim();
+        const catedraId = document.getElementById(`edit-catedra-${reservaId}`).value;
+        const aulaId = document.getElementById(`edit-aula-${reservaId}`).value;
+        const fecha = document.getElementById(`edit-fecha-${reservaId}`).value;
+        const horaInicio = document.getElementById(`edit-hora-inicio-${reservaId}`).value;
+        const horaFin = document.getElementById(`edit-hora-fin-${reservaId}`).value;
+
+        const requerimientos = Array.from(
+            contenidoExpandido.querySelectorAll(`#lista-req-${reservaId} input[type="checkbox"]:checked`)
+        ).map(cb => cb.value);
+
         const formData = new FormData();
+        formData.append('field', 'docente');
+        formData.append('value', docente);
+        formData.append('field', 'catedra');
+        formData.append('value', catedraId);
+        formData.append('field', 'aula');
+        formData.append('value', aulaId);
+        formData.append('field', 'fecha');
+        formData.append('value', fecha);
+        formData.append('field', 'hora_inicio');
+        formData.append('value', horaInicio);
+        formData.append('field', 'hora_fin');
+        formData.append('value', horaFin);
+        formData.append('field', 'requerimientos');
+        formData.append('value', requerimientos.join(','));
 
-        tr.querySelectorAll('.editable').forEach(td => {
-            const field = td.dataset.field;
-            const input = td.querySelector('input, select');
-            if (input) {
-                formData.append('field', field);
-                formData.append('value', input.value.trim());
-
-                fetch(window.APP_URLS.updateReserva(id), {
-                    method: 'POST',
-                    body: formData,
-                    headers: { 'X-CSRFToken': window.CSRF_TOKEN || getCsrfToken() }
-                })
-                .then(r => r.json().then(data => ({ok: r.ok, data})))
-                .then(({ok, data}) => {
-                    if (!ok || !data.success) {
-                        throw new Error(data.message || 'Error al guardar');
-                    }
-                })
-                .catch(err => {
-                    alert(err.message);
-                    cancelarEdicion();
-                    throw err;
-                });
+        fetch(window.APP_URLS.updateReserva(reservaId), {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-CSRFToken': window.CSRF_TOKEN || getCsrfToken() }
+        })
+        .then(r => r.json().then(data => ({ok: r.ok, data})))
+        .then(({ok, data}) => {
+            if (ok && data.success) {
+                editingRow = null;
+                alert('Reserva actualizada correctamente');
+                recargarTabla();
+            } else {
+                throw new Error(data.message || 'Error al guardar');
             }
+        })
+        .catch(err => {
+            alert(err.message);
+            cancelarEdicion();
         });
-
-        setTimeout(() => {
-            editingRow = null;
-            alert('Reserva actualizada correctamente');
-            recargarTabla();
-        }, 200);
     }
 
     function cancelarEdicion() {
         if (!editingRow) return;
+        
+        // Remover la fila expandida
+        const expandida = document.querySelector('.fila-edicion-expandida, .grupo-edicion-expandida');
+        if (expandida) expandida.remove();
+        
         editingRow = null;
-        recargarTabla();
     }
 
     // 5. Eliminación individual

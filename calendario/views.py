@@ -20,10 +20,11 @@ def reservas_por_aula(request):
     aula_id = request.GET.get('aula')
     fecha = request.GET.get('fecha')
 
+    # ✅ SOLUCIÓN: Agregamos .prefetch_related('requerimientos')
     reservas = Reserva.objects.filter(
         aula_id=aula_id,
         fecha=fecha
-    ).select_related('catedra', 'aula')
+    ).select_related('catedra', 'aula').prefetch_related('requerimientos')
 
     data = []
     for r in reservas:
@@ -38,4 +39,3 @@ def reservas_por_aula(request):
         })
 
     return JsonResponse(data, safe=False)
-

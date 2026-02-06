@@ -261,7 +261,8 @@ def guardar_reserva(request):
                     aula.requerimientos.add(requerimiento)
         # Crear reservas
         for f in fechas_a_reservar:
-            Reserva.objects.create(
+            # ✅ SOLUCIÓN: Guardamos la reserva en una variable
+            reserva = Reserva.objects.create(
                 aula=aula,
                 docente=docente,
                 catedra=catedra,
@@ -271,6 +272,10 @@ def guardar_reserva(request):
                 tipo=tipo,
                 fecha_fin_semestre=fin_semestre if tipo == "semestral" else None
             )
+            
+            # ✅ SOLUCIÓN: Asignamos los requerimientos a la reserva
+            if req_ids:
+                reserva.requerimientos.set(req_ids)
 
         messages.success(request, f"Reserva(s) guardada(s) correctamente. ({len(fechas_a_reservar)} fecha(s))")
         return redirect("reservas:nueva_reserva")
@@ -445,6 +450,7 @@ def lista_reservas(request):
             'reservas_agrupadas': reservas_agrupadas,
             'catedras': Catedra.objects.all(),
             'aulas': Aula.objects.all(),
+            'requerimientos': Requerimiento.objects.all(),  # ✅ Agregar requerimientos
             'q': q,
             'semana_filtro': semana_filtro,
             'fecha_inicio_semana': lunes.strftime('%d/%m/%Y') if lunes else '',
@@ -457,6 +463,7 @@ def lista_reservas(request):
             'reservas': reservas_base,
             'catedras': Catedra.objects.all(),
             'aulas': Aula.objects.all(),
+            'requerimientos': Requerimiento.objects.all(),  # ✅ Agregar requerimientos
             'q': q,
             'semana_filtro': semana_filtro,
             'fecha_inicio_semana': lunes.strftime('%d/%m/%Y') if lunes else '',
@@ -610,11 +617,16 @@ def update_reserva(request, id):
                     'message': 'Formato de hora inválido'
                 }, status=400)
         
+        elif field == 'requerimientos':
+            # ✅ MANEJO DE REQUERIMIENTOS
+            if value:
+                req_ids = [int(x) for x in value.split(',') if x.strip()]
+                reserva.requerimientos.set(req_ids)
+            else:
+                reserva.requerimientos.clear()
+        
         else:
-            return JsonResponse({
-                'success': False,
-                'message': 'Campo no válido'
-            }, status=400)
+            return JsonResponse({'success': False, 'message': f'Campo desconocido: {field}'})
         
         reserva.save()
         
@@ -729,6 +741,9 @@ def update_grupo_semestral(request):
                 hora_inicio = datetime.strptime(nueva_hora_inicio, '%H:%M').time() if nueva_hora_inicio else reserva_padre.hora_inicio
                 hora_fin = datetime.strptime(nueva_hora_fin, '%H:%M').time() if nueva_hora_fin else reserva_padre.hora_fin
                 
+                # ✅ Obtener los requerimientos de la reserva padre
+                requerimientos_ids = list(reserva_padre.requerimientos.values_list('id', flat=True))
+                
                 # Crear reservas para las fechas faltantes
                 while fecha_siguiente <= nueva_fecha_obj:
                     # Verificar que no haya choque
@@ -745,8 +760,8 @@ def update_grupo_semestral(request):
                             'message': f'Choque de horario detectado el {fecha_siguiente.strftime("%d/%m/%Y")} al intentar crear reserva faltante'
                         }, status=400)
                     
-                    # Crear la nueva reserva
-                    Reserva.objects.create(
+                    # ✅ Crear la nueva reserva y guardarla en una variable
+                    nueva_reserva = Reserva.objects.create(
                         aula_id=aula_id,
                         catedra_id=catedra_id,
                         docente=docente,
@@ -756,6 +771,10 @@ def update_grupo_semestral(request):
                         tipo='semestral',
                         fecha_fin_semestre=nueva_fecha_obj
                     )
+                    
+                    # ✅ Asignar los mismos requerimientos que la reserva padre
+                    if requerimientos_ids:
+                        nueva_reserva.requerimientos.set(requerimientos_ids)
                     
                     count_creadas += 1
                     fecha_siguiente += timedelta(days=7)
@@ -800,6 +819,18 @@ def update_grupo_semestral(request):
         if nueva_fecha_fin:
             datos_actualizar['fecha_fin_semestre'] = datetime.strptime(nueva_fecha_fin, '%Y-%m-%d').date()
         
+        # ✅ NUEVO: Obtener nuevos requerimientos si se proporcionaron
+        nuevos_requerimientos = request.POST.get('requerimientos') if 'requerimientos' in request.POST else None
+        req_ids = None
+        if nuevos_requerimientos is not None:
+            try:
+                req_ids = [int(req_id.strip()) for req_id in nuevos_requerimientos.split(',') if req_id.strip()]
+            except ValueError:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Formato de requerimientos inválido'
+                }, status=400)
+        
         # Validar choques de horario si se cambió aula o horarios
         if nueva_aula_id or nueva_hora_inicio or nueva_hora_fin:
             aula_a_validar = int(nueva_aula_id) if nueva_aula_id else reserva_padre.aula_id
@@ -822,9 +853,22 @@ def update_grupo_semestral(request):
                         'message': f'Choque de horario detectado el {reserva.fecha.strftime("%d/%m/%Y")}'
                     }, status=400)
         
-        # Actualizar TODAS las reservas del grupo
+        # Guardar los IDs del grupo ANTES de cualquier actualización
+        ids_grupo_para_actualizar = list(reservas_grupo.values_list('id', flat=True))
+        
+        # PRIMERO: Actualizar campos básicos de TODAS las reservas del grupo
         if datos_actualizar:
             reservas_grupo.update(**datos_actualizar)
+        
+        # SEGUNDO: Actualizar requerimientos usando los IDs guardados
+        # Esto garantiza que actualizamos las reservas correctas incluso si cambiaron sus atributos
+        if nuevos_requerimientos is not None:
+            reservas_a_actualizar = Reserva.objects.filter(id__in=ids_grupo_para_actualizar)
+            for reserva in reservas_a_actualizar:
+                if req_ids:
+                    reserva.requerimientos.set(req_ids)
+                else:
+                    reserva.requerimientos.clear()
         
         # Construir mensaje
         mensaje = 'Grupo actualizado correctamente.'
