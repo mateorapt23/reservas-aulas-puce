@@ -594,15 +594,4 @@ http://192.168.1.XXX:8000/admin
 5. **✅ Todos los cambios se sincronizan automáticamente** entre todos los usuarios
 6. **✅ Si cambias la IP del servidor**, avisa a todos los usuarios
 
----
-
-## 📞 Soporte
-
-Si tienes problemas:
-
-1. Revisa la sección de "Solución de Problemas" arriba
-2. Verifica el checklist de instalación
-3. Revisa los logs del servidor en la ventana de CMD
-
----
 
