@@ -28,7 +28,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    '192.168.1.*',  # Permitir cualquier IP de la subred 192.168.1.x
+    '172.16.*.*',  # Permitir cualquier IP de la subred 192.168.1.x
     '*',  # Permitir todas las conexiones (solo para desarrollo)
 ]
 

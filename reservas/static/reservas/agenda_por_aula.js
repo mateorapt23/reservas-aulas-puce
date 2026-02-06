@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 DOM Cargado - Iniciando script agenda_por_aula.js');
 
     const horasColumna = document.getElementById('col-horas');
+    const horasColumnaFin = document.getElementById('col-horas-fin');
     const btnFiltrar = document.getElementById('btn-filtrar');
     const infoSemana = document.getElementById('info-semana');
     const fechaInicio = document.getElementById('fecha-inicio');
@@ -9,16 +10,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     console.log('Elementos encontrados:', {
         horasColumna: !!horasColumna,
+        horasColumnaFin: !!horasColumnaFin,
         btnFiltrar: !!btnFiltrar,
         infoSemana: !!infoSemana
     });
 
-    // Generar horas (7:00 a 21:00)
+    // Generar horas (7:00 a 21:00) en columna inicial
     for (let h = 7; h <= 21; h++) {
         const divHora = document.createElement('div');
         divHora.className = 'hora';
         divHora.innerText = (h < 10 ? '0' : '') + h + ":00";
         horasColumna.appendChild(divHora);
+    }
+
+    // Generar horas (7:00 a 21:00) en columna final
+    for (let h = 7; h <= 21; h++) {
+        const divHora = document.createElement('div');
+        divHora.className = 'hora-fin';
+        divHora.innerText = (h < 10 ? '0' : '') + h + ":00";
+        horasColumnaFin.appendChild(divHora);
     }
 
     function obtenerLunesDeLaSemana(fechaStr) {
@@ -197,6 +207,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // ✅ APLICAR ESTILOS TEMPORALES PARA IMPRESIÓN (TEXTO MÁS GRANDE)
             const elementosParaAumentar = {
                 '.hora': { fontSize: '14px' }, // Era 11px
+                '.hora-fin': { fontSize: '14px' }, // Columna final
                 '.dia-nombre': { fontSize: '16px', fontWeight: '700' }, // Era 13px
                 '.dia-fecha': { fontSize: '13px' }, // Era 11px
                 '.reserva': { fontSize: '13px', padding: '8px' }, // Era 10px y 5px

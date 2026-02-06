@@ -46,7 +46,7 @@
     <div class="overflow-x-auto border border-white/10 rounded-2xl bg-[#1e293b]">
         <div id="calendario-container" class="flex min-h-[930px] relative">
             
-            <!-- COLUMNA DE HORAS -->
+            <!-- COLUMNA DE HORAS (INICIO) -->
             <div class="flex flex-col w-16 border-r border-white/10 text-gray-400 text-xs flex-shrink-0">
                 <div class="h-[90px] border-b-2 border-[#475569] bg-[#1e293b]"></div>
                 <div id="col-horas" class="flex-1"></div>
@@ -98,6 +98,12 @@
                 </div>
             </div>
 
+            <!-- COLUMNA DE HORAS (FINAL) -->
+            <div class="flex flex-col w-16 border-l border-white/10 text-gray-400 text-xs flex-shrink-0">
+                <div class="h-[90px] border-b-2 border-[#475569] bg-[#1e293b]"></div>
+                <div id="col-horas-fin" class="flex-1"></div>
+            </div>
+
         </div>
     </div>
 
@@ -110,6 +116,16 @@
     border-bottom: 1px solid #334155;
     padding-right: 15px;
     text-align: right;
+    box-sizing: border-box;
+    font-size: 11px;
+}
+
+.hora-fin {
+    height: 60px;
+    line-height: 60px;
+    border-bottom: 1px solid #334155;
+    padding-left: 15px;
+    text-align: left;
     box-sizing: border-box;
     font-size: 11px;
 }
@@ -159,6 +175,13 @@
     background: #0f172a;
     flex: 1;
     min-height: 840px;
+    background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 59px,
+        #334155 59px,
+        #334155 60px
+    );
 }
 
 .reserva {
