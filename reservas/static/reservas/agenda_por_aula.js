@@ -71,6 +71,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // Limpiar columnas de reservas
         document.querySelectorAll('.dia-reservas').forEach(col => col.innerHTML = '');
 
+        // Actualizar número de aula en los headers de las columnas de horas
+        const aulaSeleccionada = document.getElementById('select-aula');
+        const aulaTexto = aulaSeleccionada.options[aulaSeleccionada.selectedIndex].text;
+        const aulaHeaderInicio = document.getElementById('aula-header-inicio');
+        const aulaHeaderFin = document.getElementById('aula-header-fin');
+        if (aulaHeaderInicio) aulaHeaderInicio.textContent = aulaTexto;
+        if (aulaHeaderFin) aulaHeaderFin.textContent = aulaTexto;
+
         const lunes = obtenerLunesDeLaSemana(fechaInput);
         const fechasSemana = [];
         
