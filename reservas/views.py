@@ -653,7 +653,9 @@ def delete_reservas(request):
                 'message': 'No se especificaron reservas para eliminar'
             }, status=400)
         
-        count = Reserva.objects.filter(id__in=ids).delete()[0]
+        # Contar ANTES de eliminar para mostrar solo el número de reservas (no filas M2M)
+        count = Reserva.objects.filter(id__in=ids).count()
+        Reserva.objects.filter(id__in=ids).delete()
         
         return JsonResponse({
             'success': True,
@@ -688,6 +690,7 @@ def update_grupo_semestral(request):
         nueva_hora_inicio = request.POST.get('hora_inicio') if 'hora_inicio' in request.POST else None
         nueva_hora_fin = request.POST.get('hora_fin') if 'hora_fin' in request.POST else None
         nueva_fecha_fin = request.POST.get('fecha_fin_semestre') if 'fecha_fin_semestre' in request.POST else None
+        nueva_fecha_inicio = request.POST.get('fecha_inicio') if 'fecha_inicio' in request.POST else None
         
         # Validaciones
         if nueva_hora_inicio and nueva_hora_fin:
@@ -700,8 +703,9 @@ def update_grupo_semestral(request):
                 }, status=400)
         
         if nueva_fecha_fin:
-            nueva_fecha_obj = datetime.strptime(nueva_fecha_fin, '%Y-%m-%d').date()
-            if nueva_fecha_obj < reserva_padre.fecha:
+            nueva_fecha_obj_fin_check = datetime.strptime(nueva_fecha_fin, '%Y-%m-%d').date()
+            fecha_inicio_ref = datetime.strptime(nueva_fecha_inicio, '%Y-%m-%d').date() if nueva_fecha_inicio else reserva_padre.fecha
+            if nueva_fecha_obj_fin_check < fecha_inicio_ref:
                 return JsonResponse({
                     'success': False,
                     'message': 'La fecha fin debe ser posterior a la fecha de inicio'
@@ -716,6 +720,54 @@ def update_grupo_semestral(request):
             hora_fin=reserva_padre.hora_fin,
             tipo='semestral'
         ).order_by('fecha')
+        
+        # 🔥 MANEJO DE CAMBIO DE FECHA INICIO (solo aplica a la reserva padre)
+        padre_excluido = False
+        if nueva_fecha_inicio:
+            nueva_fecha_inicio_obj = datetime.strptime(nueva_fecha_inicio, '%Y-%m-%d').date()
+            if nueva_fecha_inicio_obj != reserva_padre.fecha:
+                aula_a_validar_inicio = int(nueva_aula_id) if nueva_aula_id else reserva_padre.aula_id
+                hora_inicio_val = datetime.strptime(nueva_hora_inicio, '%H:%M').time() if nueva_hora_inicio else reserva_padre.hora_inicio
+                hora_fin_val = datetime.strptime(nueva_hora_fin, '%H:%M').time() if nueva_hora_fin else reserva_padre.hora_fin
+                
+                ids_grupo_actuales = list(reservas_grupo.values_list('id', flat=True))
+                
+                # Recalcular todas las nuevas fechas de los hijos (cada 7 días desde la nueva fecha inicio)
+                hijos_actuales = list(reservas_grupo.exclude(id=reserva_padre.id).order_by('fecha'))
+                nuevas_fechas = []
+                fecha_iter = nueva_fecha_inicio_obj + timedelta(days=7)
+                for _ in hijos_actuales:
+                    nuevas_fechas.append(fecha_iter)
+                    fecha_iter += timedelta(days=7)
+                
+                # Validar choques en la nueva fecha de inicio y en todas las nuevas fechas de hijos
+                todas_nuevas_fechas = [nueva_fecha_inicio_obj] + nuevas_fechas
+                for f in todas_nuevas_fechas:
+                    choque = Reserva.objects.filter(
+                        aula_id=aula_a_validar_inicio,
+                        fecha=f,
+                        hora_inicio__lt=hora_fin_val,
+                        hora_fin__gt=hora_inicio_val
+                    ).exclude(id__in=ids_grupo_actuales).exists()
+                    
+                    if choque:
+                        return JsonResponse({
+                            'success': False,
+                            'message': f'Choque de horario detectado el {f.strftime("%d/%m/%Y")} al cambiar la fecha de inicio'
+                        }, status=400)
+                
+                # Actualizar la fecha del padre
+                reserva_padre.fecha = nueva_fecha_inicio_obj
+                reserva_padre.save(update_fields=['fecha'])
+                
+                # Actualizar la fecha de cada hijo al nuevo día de la semana
+                for hijo, nueva_fecha_hijo in zip(hijos_actuales, nuevas_fechas):
+                    Reserva.objects.filter(id=hijo.id).update(fecha=nueva_fecha_hijo)
+                
+                # Marcar que el padre ya fue actualizado (excluirlo del bulk update posterior)
+                padre_excluido = True
+                # El queryset de hijos ya fue procesado individualmente, excluir padre del queryset general
+                reservas_grupo = reservas_grupo.exclude(id=reserva_padre.id)
         
         # 🔥 LÓGICA DE EXTENSIÓN/REDUCCIÓN DE FECHA FIN SEMESTRE
         count_eliminadas = 0
@@ -856,14 +908,21 @@ def update_grupo_semestral(request):
         # Guardar los IDs del grupo ANTES de cualquier actualización
         ids_grupo_para_actualizar = list(reservas_grupo.values_list('id', flat=True))
         
-        # PRIMERO: Actualizar campos básicos de TODAS las reservas del grupo
+        # PRIMERO: Actualizar campos básicos de TODAS las reservas del grupo (hijos)
         if datos_actualizar:
             reservas_grupo.update(**datos_actualizar)
+        
+        # Si el padre fue excluido del queryset (porque cambió su fecha), actualizarlo individualmente
+        if padre_excluido and datos_actualizar:
+            Reserva.objects.filter(id=reserva_padre.id).update(**datos_actualizar)
+            ids_grupo_para_actualizar = [reserva_padre.id] + ids_grupo_para_actualizar
         
         # SEGUNDO: Actualizar requerimientos usando los IDs guardados
         # Esto garantiza que actualizamos las reservas correctas incluso si cambiaron sus atributos
         if nuevos_requerimientos is not None:
-            reservas_a_actualizar = Reserva.objects.filter(id__in=ids_grupo_para_actualizar)
+            # Incluir siempre el padre
+            todos_ids = list(set([reserva_padre.id] + ids_grupo_para_actualizar))
+            reservas_a_actualizar = Reserva.objects.filter(id__in=todos_ids)
             for reserva in reservas_a_actualizar:
                 if req_ids:
                     reserva.requerimientos.set(req_ids)

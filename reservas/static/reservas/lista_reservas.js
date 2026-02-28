@@ -242,7 +242,19 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!btnEliminarSeleccion) return;
 
         const checkedBoxes = document.querySelectorAll('.select-row:checked, .select-grupo:checked');
-        const count = checkedBoxes.length;
+        
+        // Calcular cuántas reservas hijas se van a eliminar
+        let count = 0;
+        checkedBoxes.forEach(cb => {
+            if (cb.classList.contains('select-grupo')) {
+                // Para grupos semestrales, contar las reservas hijas (no el padre)
+                const grupoId = cb.dataset.grupoId;
+                const hijos = document.querySelectorAll(`.grupo-hijo-${grupoId}`);
+                count += hijos.length;
+            } else {
+                count += 1;
+            }
+        });
 
         if (count > 0) {
             btnEliminarSeleccion.disabled = false;
@@ -493,7 +505,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const requerimientosIds = JSON.parse(tr.dataset.requerimientos || '[]');
 
         // Obtener valores actuales
-        let docente = '', catedraId = '', aulaId = '', fechaFin = '', horaInicio = '', horaFin = '';
+        let docente = '', catedraId = '', aulaId = '', fechaInicio = '', fechaFin = '', horaInicio = '', horaFin = '';
 
         tr.querySelectorAll('.editable-grupo').forEach(td => {
             const field = td.dataset.field;
@@ -504,6 +516,11 @@ document.addEventListener('DOMContentLoaded', function () {
             else if (field === 'hora_inicio') horaInicio = td.textContent.trim();
             else if (field === 'hora_fin') horaFin = td.textContent.trim();
         });
+
+        // Obtener fecha de inicio desde el td que muestra "fecha_inicio → fecha_fin"
+        // La fecha de inicio está en el span.text-sm que no tiene clase editable-grupo
+        const fechaInicioSpan = tr.querySelector('td span.text-sm');
+        if (fechaInicioSpan) fechaInicio = fechaInicioSpan.textContent.trim();
 
         // Crear el contenido expandido
         const contenido = document.createElement('tr');
@@ -531,21 +548,32 @@ document.addEventListener('DOMContentLoaded', function () {
                         </select>
                     </div>
 
-                    <div class="flex gap-2">
-                        <input id="edit-fecha-fin-${grupoId}"
-                               type="date"
-                               value="${fechaFin}"
-                               class="input input-xs bg-[#1a1a1a] text-white w-44">
+                    <div class="flex gap-2 items-center">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-gray-400 text-xs">Fecha inicio</label>
+                            <input id="edit-fecha-inicio-${grupoId}"
+                                   type="date"
+                                   value="${fechaInicio}"
+                                   class="input input-xs bg-[#1a1a1a] text-white w-44">
+                        </div>
+                        <span class="text-gray-400 mt-4">→</span>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-gray-400 text-xs">Fecha fin</label>
+                            <input id="edit-fecha-fin-${grupoId}"
+                                   type="date"
+                                   value="${fechaFin}"
+                                   class="input input-xs bg-[#1a1a1a] text-white w-44">
+                        </div>
 
                         <input id="edit-hora-inicio-${grupoId}"
                                value="${horaInicio}"
                                readonly
-                               class="input input-xs bg-[#1a1a1a] text-white w-28 time-input-edit">
+                               class="input input-xs bg-[#1a1a1a] text-white w-28 time-input-edit mt-4">
 
                         <input id="edit-hora-fin-${grupoId}"
                                value="${horaFin}"
                                readonly
-                               class="input input-xs bg-[#1a1a1a] text-white w-28 time-input-edit">
+                               class="input input-xs bg-[#1a1a1a] text-white w-28 time-input-edit mt-4">
                     </div>
 
                     <!-- Selector de requerimientos (IGUAL QUE AULAS.JS) -->
@@ -612,6 +640,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const docente = document.getElementById(`edit-docente-${grupoId}`).value.trim();
         const catedraId = document.getElementById(`edit-catedra-${grupoId}`).value;
         const aulaId = document.getElementById(`edit-aula-${grupoId}`).value;
+        const fechaInicio = document.getElementById(`edit-fecha-inicio-${grupoId}`).value;
         const fechaFin = document.getElementById(`edit-fecha-fin-${grupoId}`).value;
         const horaInicio = document.getElementById(`edit-hora-inicio-${grupoId}`).value;
         const horaFin = document.getElementById(`edit-hora-fin-${grupoId}`).value;
@@ -626,6 +655,7 @@ document.addEventListener('DOMContentLoaded', function () {
         formData.append('docente', docente);
         formData.append('catedra', catedraId);
         formData.append('aula', aulaId);
+        formData.append('fecha_inicio', fechaInicio);
         formData.append('fecha_fin_semestre', fechaFin);
         formData.append('hora_inicio', horaInicio);
         formData.append('hora_fin', horaFin);
@@ -660,9 +690,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 const grupoId = tr.dataset.grupoId;
                 const hijos = document.querySelectorAll(`.grupo-hijo-${grupoId}`);
 
-                if (!confirm(`¿Eliminar todo el grupo semestral (${hijos.length} reservas)?`)) return;
+                if (!confirm(`¿Eliminar todo el grupo semestral (${hijos.length + 1} reservas incluyendo la fecha de inicio)?`)) return;
 
-                const ids = Array.from(hijos).map(h => h.dataset.id);
+                // Incluir el padre + todos los hijos
+                const ids = [grupoId, ...Array.from(hijos).map(h => h.dataset.id)];
                 const formData = new FormData();
                 ids.forEach(id => formData.append('ids[]', id));
 

@@ -6,6 +6,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', RedirectView.as_view(url='/reservas/nueva/', permanent=False)),  # 👈 Agregar esto
     path('', include('usuarios.urls')),
+    path('api/', include('reservas.api_urls')), 
     path('reservas/', include('reservas.urls')),
     path('configuracion/', include('configuracion.urls')),
     path('calendario/', include('calendario.urls')),
