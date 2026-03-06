@@ -47,7 +47,7 @@
         <div id="calendario-container" class="flex min-h-[930px] relative">
             
             <!-- COLUMNA DE HORAS (INICIO) -->
-            <div class="flex flex-col w-16 border-r border-white/10 text-gray-400 text-xs flex-shrink-0">
+            <div class="flex flex-col w-24 border-r border-white/10 text-gray-400 text-xs flex-shrink-0">
                 <div class="h-[90px] border-b-2 border-[#475569] bg-[#1e293b] flex items-center justify-center">
                     <span id="aula-header-inicio" class="font-bold text-white text-sm"></span>
                 </div>
@@ -101,7 +101,7 @@
             </div>
 
             <!-- COLUMNA DE HORAS (FINAL) -->
-            <div class="flex flex-col w-16 border-l border-white/10 text-gray-400 text-xs flex-shrink-0">
+            <div class="flex flex-col w-24 border-l border-white/10 text-gray-400 text-xs flex-shrink-0">
                 <div class="h-[90px] border-b-2 border-[#475569] bg-[#1e293b] flex items-center justify-center">
                     <span id="aula-header-fin" class="font-bold text-white text-sm"></span>
                 </div>
@@ -116,22 +116,28 @@
 <style>
 .hora {
     height: 60px;
-    line-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border-bottom: 1px solid #334155;
-    padding-right: 15px;
-    text-align: right;
+    padding: 0 6px;
+    text-align: center;
     box-sizing: border-box;
-    font-size: 11px;
+    font-size: 11.5px;
+    white-space: nowrap;
 }
 
 .hora-fin {
     height: 60px;
-    line-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border-bottom: 1px solid #334155;
-    padding-left: 15px;
-    text-align: left;
+    padding: 0 6px;
+    text-align: center;
     box-sizing: border-box;
-    font-size: 11px;
+    font-size: 11.5px;
+    white-space: nowrap;
 }
 
 .dia-columna {

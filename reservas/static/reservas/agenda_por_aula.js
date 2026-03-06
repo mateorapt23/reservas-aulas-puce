@@ -15,19 +15,23 @@ document.addEventListener('DOMContentLoaded', function() {
         infoSemana: !!infoSemana
     });
 
-    // Generar horas (7:00 a 21:00) en columna inicial
-    for (let h = 7; h <= 21; h++) {
+    // Generar rangos de horas (07h00 - 08h00 hasta 20h00 - 21h00) en columna inicial
+    for (let h = 7; h <= 20; h++) {
         const divHora = document.createElement('div');
         divHora.className = 'hora';
-        divHora.innerText = (h < 10 ? '0' : '') + h + ":00";
+        const inicio = (h < 10 ? '0' : '') + h + "h00";
+        const fin = (h + 1 < 10 ? '0' : '') + (h + 1) + "h00";
+        divHora.innerText = inicio + " - " + fin;
         horasColumna.appendChild(divHora);
     }
 
-    // Generar horas (7:00 a 21:00) en columna final
-    for (let h = 7; h <= 21; h++) {
+    // Generar rangos de horas (07h00 - 08h00 hasta 20h00 - 21h00) en columna final
+    for (let h = 7; h <= 20; h++) {
         const divHora = document.createElement('div');
         divHora.className = 'hora-fin';
-        divHora.innerText = (h < 10 ? '0' : '') + h + ":00";
+        const inicio = (h < 10 ? '0' : '') + h + "h00";
+        const fin = (h + 1 < 10 ? '0' : '') + (h + 1) + "h00";
+        divHora.innerText = inicio + " - " + fin;
         horasColumnaFin.appendChild(divHora);
     }
 
@@ -206,16 +210,29 @@ document.addEventListener('DOMContentLoaded', function() {
             const aulaTexto = aulaSeleccionada.options[aulaSeleccionada.selectedIndex].text;
             const semanaTexto = `${fechaInicio.textContent} al ${fechaFin.textContent}`;
             
-            console.log('📸 Iniciando captura...', { aulaTexto, semanaTexto });
+            console.log('📸 Iniciando captura...');
             
             btnDescargar.disabled = true;
             const textoOriginal = btnDescargar.innerHTML;
             btnDescargar.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Generando...';
+
+            // ✅ GUARDAR estado original del contenedor y su padre para restaurar después
+            const overflowParent = calendarioContainer.closest('.overflow-x-auto');
+            const originalOverflow = overflowParent ? overflowParent.style.overflow : null;
+            const originalWidth = calendarioContainer.style.width;
+            const originalMinWidth = calendarioContainer.style.minWidth;
+
+            // ✅ EXPANDIR temporalmente para capturar todo el contenido
+            if (overflowParent) {
+                overflowParent.style.overflow = 'visible';
+            }
+            calendarioContainer.style.width = calendarioContainer.scrollWidth + 'px';
+            calendarioContainer.style.minWidth = calendarioContainer.scrollWidth + 'px';
             
             // ✅ APLICAR ESTILOS TEMPORALES PARA IMPRESIÓN (TEXTO MÁS GRANDE)
             const elementosParaAumentar = {
-                '.hora': { fontSize: '14px' }, // Era 11px
-                '.hora-fin': { fontSize: '14px' }, // Columna final
+                '.hora': { fontSize: '13px', lineHeight: '60px' }, // Era 10px
+                '.hora-fin': { fontSize: '13px', lineHeight: '60px' }, // Columna final
                 '.dia-nombre': { fontSize: '16px', fontWeight: '700' }, // Era 13px
                 '.dia-fecha': { fontSize: '13px' }, // Era 11px
                 '.reserva': { fontSize: '13px', padding: '8px' }, // Era 10px y 5px
@@ -251,13 +268,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 // ✅ Usar html-to-image con mayor calidad
                 htmlToImage.toPng(calendarioContainer, {
                     quality: 1.0,
-                    pixelRatio: 3, // Aumentado a 3x para mejor calidad de impresión
-                    backgroundColor: '#1e293b'
+                    pixelRatio: 3,
+                    backgroundColor: '#1e293b',
+                    width: calendarioContainer.scrollWidth,
+                    height: calendarioContainer.scrollHeight,
+                    style: {
+                        overflow: 'visible'
+                    }
                 })
                 .then(function(dataUrl) {
                     console.log('✅ Imagen generada correctamente');
                     
-                    // RESTAURAR ESTILOS ORIGINALES
+                    // RESTAURAR ESTILOS ORIGINALES DE TAMAÑO
+                    if (overflowParent) overflowParent.style.overflow = originalOverflow;
+                    calendarioContainer.style.width = originalWidth;
+                    calendarioContainer.style.minWidth = originalMinWidth;
+
+                    // RESTAURAR ESTILOS ORIGINALES DE TEXTO
                     Object.keys(estilosOriginales).forEach(selector => {
                         const elementos = calendarioContainer.querySelectorAll(selector);
                         elementos.forEach((el, index) => {
@@ -288,7 +315,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 .catch(function(error) {
                     console.error('❌ Error al generar imagen:', error);
                     
-                    // RESTAURAR ESTILOS ORIGINALES en caso de error
+                    // RESTAURAR ESTILOS ORIGINALES DE TAMAÑO en caso de error
+                    if (overflowParent) overflowParent.style.overflow = originalOverflow;
+                    calendarioContainer.style.width = originalWidth;
+                    calendarioContainer.style.minWidth = originalMinWidth;
+
+                    // RESTAURAR ESTILOS ORIGINALES DE TEXTO en caso de error
                     Object.keys(estilosOriginales).forEach(selector => {
                         const elementos = calendarioContainer.querySelectorAll(selector);
                         elementos.forEach((el, index) => {
